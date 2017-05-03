@@ -15,5 +15,5 @@ Inside this function you can select which example from the paper you want to rep
 
 If you use this code for your research, please consider citing the original paper:
 
-- Dolz J, Ben Ayed I, Desrosiers C. "[Unbiased Shape Compactness for segmentation."](https://arxiv.org/pdf/1704.08908.pdf) arXiv preprint arXiv:1612.03925 (2016)
+- Dolz J, Ben Ayed I, Desrosiers C. "[Unbiased Shape Compactness for segmentation."](https://arxiv.org/pdf/1704.08908.pdf) arXiv preprint arXiv:1704.08908 (2017)
 
