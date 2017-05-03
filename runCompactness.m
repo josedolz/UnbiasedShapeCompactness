@@ -38,7 +38,7 @@ example = RIGHTVENT_MRI;
 
 switch example
  case 1
-  disp(' Runing Aorta MRI example...');
+  disp(' Running Aorta MRI example...');
   % Load data
   load('Data/mriAorta.mat'); % CT image
   load('Data/gtMRIAorta.mat'); % Ground truth
@@ -52,7 +52,7 @@ switch example
   ParamsADMM.lambda0 = 0.5; % MRF binary potential 
   ParamsADMM.mu1 = 2000;
  case 2
-  disp(' Runing Esophagus CT example...');
+  disp(' Running Esophagus CT example...');
   % Load data
   load('Data/ctEsophagus.mat'); % CT image
   load('Data/gtEsophagus.mat'); % Ground truth
@@ -66,7 +66,7 @@ switch example
   ParamsADMM.lambda0 = 0.05; % MRF binary potential
   ParamsADMM.mu1 = 2000;
  case 3
-  disp(' Runing Right Ventricle MRI example...');
+  disp(' Running Right Ventricle MRI example...');
   % Load data
   load('Data/mriRV.mat'); % CT image
   load('Data/gtRV.mat'); % Ground truth
@@ -81,7 +81,7 @@ switch example
   ParamsADMM.mu1 = 5000;
 
  otherwise
-  disp(' Runing Aorta CT example...');
+  disp(' Running Aorta CT example...');
   % Load data
   load('Data/ctAorta.mat'); % CT image
   load('Data/gtCTAorta.mat'); % Ground truth
