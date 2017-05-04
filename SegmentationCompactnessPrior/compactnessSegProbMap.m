@@ -46,16 +46,9 @@ U0(1,:) = -log(smallEps  + (1-Priors(:)));
 U0(2,:) = -log(smallEps  +  Priors(:));
 
 p = log(probMap(:));
-% p = U0(1,:)';
 
-% 
-%  V0 = zeros(2,N);
-%  V0(2,:) = p/P.lambda0;
-% V = V0;
-% 
 V0 = U0;
- V = V0;
-
+V = V0;
 
 hbk = BK_Create(N,nnz(P.Kernel)*N);
 
