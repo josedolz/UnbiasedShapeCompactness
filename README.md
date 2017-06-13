@@ -1,5 +1,5 @@
 # Unbiased Shape Compactness for segmentation
-This repository contains the code employed in our work: "Unbiased Shape Compactness for segmentation", which has been accepted at MICCAI 2017 and awarded by the "Students travel award MICCAI".
+This repository contains the code employed in our work: "Unbiased Shape Compactness for segmentation", which has been accepted at MICCAI 2017 and awarded with the "Students travel award MICCAI".
 <br>
 <img src="https://github.com/josedolz/UnbiasedShapeCompactness/blob/master/CompactnessResults.png" />
 <br>
