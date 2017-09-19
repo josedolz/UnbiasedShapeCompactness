@@ -28,75 +28,73 @@ clc
 clear all
 close all
 
+
 %% Load data
 global AORTA_MRI; AORTA_MRI = 1;
 global ESOPHAGUS_CT; ESOPHAGUS_CT = 2;
-global RIGHTVENT_MRI;RIGHTVENT_MRI = 3;
-global AORTA_CT;  AORTA_CT = 4;
+global RIGHTVENT_MRI; RIGHTVENT_MRI = 3;
+global AORTA_CT; AORTA_CT = 4;
 
 example = RIGHTVENT_MRI;
 
 switch example
- case 1
-  disp(' Running Aorta MRI example...');
-  % Load data
-  load('Data/mriAorta.mat'); % CT image
-  load('Data/gtMRIAorta.mat'); % Ground truth
-  load('Data/probMapMRIAorta.mat'); % CNN result (prob Map)
-  img = mri;
-  
-  % General parameters
-  ParamsADMM.sigma = 25; 
-  % Specific ADMM parameters
-  ParamsADMM.lambda = 5000; % Compactness prior 
-  ParamsADMM.lambda0 = 0.5; % MRF binary potential 
-  ParamsADMM.mu1 = 2000;
- case 2
-  disp(' Running Esophagus CT example...');
-  % Load data
-  load('Data/ctEsophagus.mat'); % CT image
-  load('Data/gtEsophagus.mat'); % Ground truth
-  load('Data/probMapEsophagus.mat'); % CNN result (prob Map)
-  img = ct;
+    case 1
+        disp(' Running Aorta MRI example...');
+        % Load data
+        load('Data/mriAorta.mat'); % CT image
+        load('Data/gtMRIAorta.mat'); % Ground truth
+        load('Data/probMapMRIAorta.mat'); % CNN result (prob Map)
+        img = mri;
 
-  % General parameters
-  ParamsADMM.sigma = 1000; 
-  % Specific ADMM parameters
-  ParamsADMM.lambda = 1000; % Compactness prior 
-  ParamsADMM.lambda0 = 0.05; % MRF binary potential
-  ParamsADMM.mu1 = 2000;
- case 3
-  disp(' Running Right Ventricle MRI example...');
-  % Load data
-  load('Data/mriRV.mat'); % CT image
-  load('Data/gtRV.mat'); % Ground truth
-  load('Data/probMapRV.mat'); % CNN result (prob Map)
-  img = mri;
-  
-  % General parameters
-  ParamsADMM.sigma = 100;  
-  % Specific ADMM parameters
-  ParamsADMM.lambda = 20000; % Compactness prior 
-  ParamsADMM.lambda0 = 0.5; % MRF binary potential 
-  ParamsADMM.mu1 = 5000;
+        % General parameters
+        ParamsADMM.sigma = 25; 
+        % Specific ADMM parameters
+        ParamsADMM.lambda = 5000; % Compactness prior 
+        ParamsADMM.lambda0 = 0.5; % MRF binary potential 
+        ParamsADMM.mu1 = 2000;
+    case 2
+        disp(' Running Esophagus CT example...');
+        % Load data
+        load('Data/ctEsophagus.mat'); % CT image
+        load('Data/gtEsophagus.mat'); % Ground truth
+        load('Data/probMapEsophagus.mat'); % CNN result (prob Map)
+        img = ct;
 
- otherwise
-  disp(' Running Aorta CT example...');
-  % Load data
-  load('Data/ctAorta.mat'); % CT image
-  load('Data/gtCTAorta.mat'); % Ground truth
-  load('Data/probMapCTAorta.mat'); % CNN result (prob Map)
-  img = ct;
-  
-  % General parameters
-  ParamsADMM.sigma = 1000;  
-  % Specific ADMM parameters
-  ParamsADMM.lambda = 3000; % Compactness prior 
-  ParamsADMM.lambda0 = 0.5; % MRF binary potential
-  ParamsADMM.mu1 = 2000;
+        % General parameters
+        ParamsADMM.sigma = 1000; 
+        % Specific ADMM parameters
+        ParamsADMM.lambda = 1000; % Compactness prior 
+        ParamsADMM.lambda0 = 0.05; % MRF binary potential
+        ParamsADMM.mu1 = 2000;
+    case 3
+        disp(' Running Right Ventricle MRI example...');
+        % Load data
+        load('Data/mriRV.mat'); % CT image
+        load('Data/gtRV.mat'); % Ground truth
+        load('Data/probMapRV.mat'); % CNN result (prob Map)
+        img = mri;
+
+        % General parameters
+        ParamsADMM.sigma = 100;  
+        % Specific ADMM parameters
+        ParamsADMM.lambda = 20000; % Compactness prior 
+        ParamsADMM.lambda0 = 0.5; % MRF binary potential 
+        ParamsADMM.mu1 = 5000;
+    otherwise
+        disp(' Running Aorta CT example...');
+        % Load data
+        load('Data/ctAorta.mat'); % CT image
+        load('Data/gtCTAorta.mat'); % Ground truth
+        load('Data/probMapCTAorta.mat'); % CNN result (prob Map)
+        img = ct;
+
+        % General parameters
+        ParamsADMM.sigma = 1000;  
+        % Specific ADMM parameters
+        ParamsADMM.lambda = 3000; % Compactness prior 
+        ParamsADMM.lambda0 = 0.5; % MRF binary potential
+        ParamsADMM.mu1 = 2000;
 end
-
-
 
 
 %% --------- Common ADMM Compactness PARAMETERS ------------------------
@@ -150,5 +148,5 @@ disp('Starting compactness segmentation...');
 disp(['CNN: ', num2str(diceCNN), ' vs. (CNN + GCs): ', num2str(diceGCs), ' vs. (CNN+GCs+Comp): ',num2str(diceADMM)]);
 
 if options.display
-   drawResults(img, gt, CNNSeg, SegGCs, SegADMM); 
+    drawResults(img, gt, CNNSeg, SegGCs, SegADMM); 
 end

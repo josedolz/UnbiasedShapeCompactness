@@ -7,8 +7,8 @@ title ('Ground truth')
 
 contour = bwboundaries(im2bw(double(GT)));
 for k = 1:length(contour)
-        boundary = contour{k};
-        plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
+    boundary = contour{k};
+    plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
 end
    
 subplot(1,4,2)
@@ -17,8 +17,8 @@ hold on
 title ('Seg (CNN)')
 contour = bwboundaries(im2bw(double(CNN_Seg)));
 for k = 1:length(contour)
-        boundary = contour{k};
-        plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
+    boundary = contour{k};
+    plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
 end
 
 subplot(1,4,3)
@@ -27,8 +27,8 @@ hold on
 title ('Seg (GCs)')
 contour = bwboundaries(im2bw(double(GCs_Seg)));
 for k = 1:length(contour)
-        boundary = contour{k};
-        plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
+    boundary = contour{k};
+    plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
 end
 
 
@@ -38,6 +38,6 @@ hold on
 title ('Seg (ADMM)')
 contour = bwboundaries(im2bw(double(ADMM_Seg)));
 for k = 1:length(contour)
-        boundary = contour{k};
-        plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
+    boundary = contour{k};
+    plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
 end
