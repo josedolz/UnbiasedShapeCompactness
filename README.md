@@ -12,6 +12,10 @@ To run the code just execute the following function:
 ```
 runCompactness
 ```
+Or alternatively, run in your terminal:
+```
+make
+```
 
 Inside this function you can select which example from the paper you want to reproduce by assigning to the variable example one of the four options (AORTA_MRI, ESOPHAGUS_CT, RIGHTVENT_MRI, AORTA_CT). Compactness parameters are fixed as used in the paper.
 
