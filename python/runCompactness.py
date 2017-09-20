@@ -3,6 +3,7 @@
 import graph_tool as gt
 import numpy as np
 import scipy.io as sio
+import matplotlib.pyplot as plt
 from sys import argv
 
 
@@ -71,6 +72,21 @@ def evalResults(Seg, Ground):
 
     return diceIndex, precision, recall
 
+def drawResults(img, gt, segCNN, segGCs, segADMM):
+    fig, axes = plt.subplots(nrows=1, ncols=4)
+
+    figs = [(gt, "Ground Truth"),
+            (segCNN, "seg (CNN)"),
+            (segGCs, "Seg (Gcs)"),
+            (segADMM, "Seg (ADMM)")]
+
+    for axe,fig in zip(axes.flat, figs):
+        axe.imshow(img, cmap="Greys")
+        axe.set_title(fig[1])
+        axe.contour(fig[0])
+
+    plt.show()
+
 
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1] == 'v':
@@ -98,3 +114,5 @@ if __name__ == "__main__":
     print(diceADMM, precisionADMM, recallADMM)
     print(diceGCs, precisionGCs, recallGCs)
     print(diceCNN, precisionCNN, recallCNN)
+
+    drawResults(img, gt, segCNN, segGCs, segADMM)

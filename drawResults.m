@@ -4,7 +4,6 @@ subplot(1,4,1)
 imshow(img,[])
 hold on
 title ('Ground truth')
-
 contour = bwboundaries(im2bw(double(GT)));
 for k = 1:length(contour)
     boundary = contour{k};
