@@ -146,6 +146,9 @@ disp('Starting compactness segmentation...');
 [diceCNN,precisionCNN,recallCNN]    = evalResults(logical(CNNSeg),  ParamsADMM.GroundTruth);
 
 disp(['CNN: ', num2str(diceCNN), ' vs. (CNN + GCs): ', num2str(diceGCs), ' vs. (CNN+GCs+Comp): ',num2str(diceADMM)]);
+disp(num2str(precisionCNN))
+disp(num2str(recallCNN))
+
 
 if options.display
     drawResults(img, gt, CNNSeg, SegGCs, SegADMM); 

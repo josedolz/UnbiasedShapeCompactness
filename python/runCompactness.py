@@ -5,6 +5,7 @@ import numpy as np
 import scipy.io as sio
 from sys import argv
 
+
 def wrap_load(name, path):
     return sio.loadmat(path)[name]
 
@@ -53,6 +54,24 @@ def load_and_config(verbose):
     return img, gt, probMap, ParamsADMM
 
 
+def compactnessSegProbMap(img, probMap, ParamsADMM):
+    '''
+    Dummy function for the segmentation
+    '''
+    return probMap >= 0.5, probMap >= 0.5, 0
+
+def evalResults(Seg, Ground):
+    TP = np.sum(Seg & Ground) # Sum works because those are booleans
+    PS = np.sum(Seg)
+    PG = np.sum(Ground)
+
+    diceIndex = (2 * TP) / (PS + PG)
+    precision = TP / PS
+    recall = TP / PG
+
+    return diceIndex, precision, recall
+
+
 if __name__ == "__main__":
     if len(argv) > 1 and argv[1] == 'v':
         verbose = True
@@ -60,8 +79,22 @@ if __name__ == "__main__":
         verbose = False
 
     img, gt, probMap, ParamsADMM = load_and_config(verbose)
+    # print(img.dtype, img.shape)
+    # print(gt.dtype, gt.shape)
+    # print(probMap.dtype, probMap.shape)
 
-    CNNSeg = probMap >= 0.5
+
+    segCNN = probMap >= 0.5
+    # print(CNNSeg.dtype)
     ParamsADMM['GroundTruth'] = gt
 
     print("Starting compactness segmentation...")
+    segADMM, segGCs, _ = compactnessSegProbMap(img, probMap, ParamsADMM)
+
+    diceADMM, precisionADMM, recallADMM = evalResults(segADMM, gt)
+    diceGCs, precisionGCs, recallGCs = evalResults(segGCs, gt)
+    diceCNN, precisionCNN, recallCNN = evalResults(segCNN, gt)
+
+    print(diceADMM, precisionADMM, recallADMM)
+    print(diceGCs, precisionGCs, recallGCs)
+    print(diceCNN, precisionCNN, recallCNN)
