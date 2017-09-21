@@ -40,7 +40,7 @@ X = Image(:);
 [KW,KH] = size(Kernel);
 K = nnz(Kernel);
 
-N = size(X,1);
+% N = size(X,1);
 A = padarray(reshape(1:N,W,H),[ceil(0.5*(KW-1)) ceil(0.5*(KH-1))]);
 Neigh = zeros(N,K);
 
@@ -64,7 +64,7 @@ T1(Z) = [];
 T2(Z) = [];
 
 M = sparse(T1, T2, (1-eps)*exp(-sigma*(X(T1,1)-X(T2,1)).^2) + eps, N, N);
-%M = sparse(T1, T2, 1, N, N);
+% M = sparse(T1, T2, 1, N, N);
 M = M + M';
 
 %toc

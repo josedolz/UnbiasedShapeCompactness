@@ -1,25 +1,27 @@
 #!/usr/bin/env python3
 
-import graph_tool as gt
 import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
 from sys import argv
 
+from ADMM import compactnessSegProbMap
+
 
 def wrap_load(name, path):
     return sio.loadmat(path)[name]
+
 
 def load_and_config(verbose):
     if verbose:
         print("RIGHTVENT_MRI")
 
     img = wrap_load('mri', '../Data/mriRV.mat')    
-    gt = wrap_load('gt', '../Data/gtRV.mat')    
+    grd_truth = wrap_load('gt', '../Data/gtRV.mat')    
     probMap = wrap_load('probMap', '../Data/probMapRV.mat')
 
     if verbose:
-        print(img.shape, gt.shape, probMap.shape)
+        print(img.shape, grd_truth.shape, probMap.shape)
 
     # Problem specific parameters
     ParamsADMM = {}
@@ -33,11 +35,11 @@ def load_and_config(verbose):
     ParamsADMM['noise'] = 8
 
     kernelSize = 3;
-    ParamsADMM['Kernel'] = np.ones((kernelSize, kernelSize))
-    ParamsADMM['Kernel'][kernelSize//2, kernelSize//2] = 0
+    ParamsADMM['kernel'] = np.ones((kernelSize, kernelSize), np.uint8)
+    ParamsADMM['kernel'][kernelSize//2, kernelSize//2] = 0
     
     if verbose:
-        print(ParamsADMM['Kernel'])
+        print(ParamsADMM['kernel'])
     ParamsADMM['eps'] = 1e-10
 
     # Method parameters (Common to all four applications)
@@ -52,14 +54,8 @@ def load_and_config(verbose):
     ParamsADMM['dispSeg'] = False
     ParamsADMM['dispCost'] = False
 
-    return img, gt, probMap, ParamsADMM
+    return img, grd_truth, probMap, ParamsADMM
 
-
-def compactnessSegProbMap(img, probMap, ParamsADMM):
-    '''
-    Dummy function for the segmentation
-    '''
-    return probMap >= 0.5, probMap >= 0.5, 0
 
 def evalResults(Seg, Ground):
     TP = np.sum(Seg & Ground) # Sum works because those are booleans
@@ -72,10 +68,11 @@ def evalResults(Seg, Ground):
 
     return diceIndex, precision, recall
 
-def drawResults(img, gt, segCNN, segGCs, segADMM):
+
+def drawResults(img, grd_truth, segCNN, segGCs, segADMM):
     fig, axes = plt.subplots(nrows=1, ncols=4)
 
-    figs = [(gt, "Ground Truth"),
+    figs = [(grd_truth, "Ground Truth"),
             (segCNN, "seg (CNN)"),
             (segGCs, "Seg (Gcs)"),
             (segADMM, "Seg (ADMM)")]
@@ -94,25 +91,25 @@ if __name__ == "__main__":
     else:
         verbose = False
 
-    img, gt, probMap, ParamsADMM = load_and_config(verbose)
-    # print(img.dtype, img.shape)
-    # print(gt.dtype, gt.shape)
-    # print(probMap.dtype, probMap.shape)
 
+    img, grd_truth, probMap, ParamsADMM = load_and_config(verbose)
+    # print(img.dtype, img.shape)
+    # print(grd_truth.dtype, grd_truth.shape)
+    # print(probMap.dtype, probMap.shape)
 
     segCNN = probMap >= 0.5
     # print(CNNSeg.dtype)
-    ParamsADMM['GroundTruth'] = gt
+    ParamsADMM['GroundTruth'] = grd_truth
 
     print("Starting compactness segmentation...")
     segADMM, segGCs, _ = compactnessSegProbMap(img, probMap, ParamsADMM)
 
-    diceADMM, precisionADMM, recallADMM = evalResults(segADMM, gt)
-    diceGCs, precisionGCs, recallGCs = evalResults(segGCs, gt)
-    diceCNN, precisionCNN, recallCNN = evalResults(segCNN, gt)
+    diceADMM, precisionADMM, recallADMM = evalResults(segADMM, grd_truth)
+    diceGCs, precisionGCs, recallGCs = evalResults(segGCs, grd_truth)
+    diceCNN, precisionCNN, recallCNN = evalResults(segCNN, grd_truth)
 
     print(diceADMM, precisionADMM, recallADMM)
     print(diceGCs, precisionGCs, recallGCs)
     print(diceCNN, precisionCNN, recallCNN)
 
-    drawResults(img, gt, segCNN, segGCs, segADMM)
+    drawResults(img, grd_truth, segCNN, segGCs, segADMM)
