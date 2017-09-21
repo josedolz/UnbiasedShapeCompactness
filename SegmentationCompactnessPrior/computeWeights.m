@@ -31,7 +31,7 @@
 %   1     0     1
 %   1     1     1
 %
-function M = computeWeights(Image, Kernel, sigma, eps)
+function M = compute_weights(Image, Kernel, sigma, eps)
 
 [W,H] = size(Image);
 N = W*H;

@@ -5,33 +5,31 @@ import numpy as np
 import scipy as sci
 
 
-def compactnessSegProbMap(img, probMap, P):
-    '''
+def compactness_seg_prob_map(img, prob_map, P):
+    """
     Dummy function for the segmentation
-    '''
-    smallEps = 1e-6
+    """
+    small_eps = 1e-6
 
-    H,W = img.shape
+    H, W = img.shape
     N = img.size
 
     X = img.copy()
 
-    M = computeWeights(img, P["kernel"], P["sigma"], P["eps"])
+    M = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
+
+    return prob_map >= 0.5, prob_map >= 0.5, 0
 
 
-
-    return probMap >= 0.5, probMap >= 0.5, 0
-
-
-def computeWeights(img, kernel, sigma, eps):
-    W,H = img.shape
+def compute_weights(img, kernel, sigma, eps):
+    W, H = img.shape
     N = img.size
     X = img.copy()
 
     KW, KH = kernel.shape
-    K = int(np.sum(kernel)) # 0 or 1
+    K = int(np.sum(kernel))  # 0 or 1
 
-    A = np.pad(np.arange(N).reshape(img.shape), ((KW//2,KW//2),(KH//2,KH//2)), 'constant', constant_values=-1)
+    A = np.pad(np.arange(N).reshape(img.shape), ((KW//2, KW//2), (KH//2, KH//2)), 'constant', constant_values=-1)
     neighs = np.zeros((N, K), np.int64)
 
     k = 0
@@ -46,9 +44,8 @@ def computeWeights(img, kernel, sigma, eps):
 
     T1 = np.tile(np.arange(N), K)
     T2 = neighs.flat.copy()
-    # Z = T1 > T2
-    Z = T1 <= T2 # We need to reverse the test from the Matlab version
-    # Indeed, we are selecting the true ones, whereas in the matlab they are deleted
+    Z = T1 <= T2  # We need to reverse the test from the Matlab version
+    # Indeed, we are selecting the true ones, whereas in the Matlab they are deleted
     T1 = T1[Z]
     T2 = T2[Z]
 

@@ -22,7 +22,7 @@
 % email: jose.dolz.upv@gmail.com
 % LIVIA Department, ETS, Montreal.
 
-function [Seg,Seg0, res] = compactnessSegProbMap(Image, probMap, P)
+function [Seg,Seg0, res] = compactness_seg_prob_map(Image, probMap, P)
 
 smallEps = 1e-6;
 
@@ -33,7 +33,7 @@ X = Image(:);
 
 % Compute Laplacian
 tic
-W = computeWeights(Image, P.Kernel, P.sigma, P.eps);
+W = compute_weights(Image, P.Kernel, P.sigma, P.eps);
 toc
 L = spdiags(sum(W,2),0,N,N) - W;
 

@@ -138,7 +138,7 @@ ParamsADMM.GroundTruth = gt;
 % NOTE: This function will compute segmentation by employing our
 % compactness term (SegADMM) and serial BK algorithm (SegGCs)
 disp('Starting compactness segmentation...');
-[SegADMM,SegGCs,res] = compactnessSegProbMap(img, probMap, ParamsADMM);
+[SegADMM,SegGCs,res] = compactness_seg_prob_map(img, probMap, ParamsADMM);
 
 % Evaluate results
 [diceADMM,precisionADMM,recallADMM] = evalResults(logical(SegADMM), ParamsADMM.GroundTruth);
