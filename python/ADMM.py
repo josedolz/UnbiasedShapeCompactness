@@ -24,13 +24,13 @@ def compactness_seg_prob_map(img, prob_map, P):
 def compute_weights(img, kernel, sigma, eps):
     W, H = img.shape
     N = img.size
-    X = img.copy()
+    X = img.flat.copy()
 
     KW, KH = kernel.shape
     K = int(np.sum(kernel))  # 0 or 1
 
     A = np.pad(np.arange(N).reshape(img.shape), ((KW//2, KW//2), (KH//2, KH//2)), 'constant', constant_values=-1)
-    neighs = np.zeros((N, K), np.int64)
+    neighs = np.zeros((K, N), np.int64)
 
     k = 0
     for i in range(KW):
@@ -39,7 +39,7 @@ def compute_weights(img, kernel, sigma, eps):
                 continue
 
             T = A[i:i+W, j:j+H]
-            neighs[:, k] = T.flat[:]
+            neighs[k, :] = T.flat[:]
             k += 1
 
     T1 = np.tile(np.arange(N), K)
@@ -53,11 +53,23 @@ def compute_weights(img, kernel, sigma, eps):
     This represent the difference between the nodes
     1 for the identical values, 0 for complete different ones
     '''
-    diff = (1 - eps) * np.exp(-sigma * (X.flat[:][T1] - X.flat[:][T2])**2) + eps
+    diff = (1 - eps) * np.exp(-sigma * (X[T1] - X[T2])**2) + eps
+    # diff = np.ones(len(T1))
     assert(np.min(diff) >= 0)
     assert(np.min(diff) <= 1)
     assert(np.count_nonzero(diff) == np.count_nonzero(Z))
 
-    M = sci.sparse.csc_matrix((diff, (T1, T2)), shape=(N,N))
+    M = sci.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
 
     return M + M.T
+
+
+if __name__ == "__main__":
+    input = (np.arange(16)+1).reshape(4, 4)
+    input[1:3, 1:3] = 17
+
+    k = np.ones((3,3))
+    k[1, 1] = 0
+
+    output = compute_weights(input, k, 100, 1e-10).toarray()
+    print(output)
