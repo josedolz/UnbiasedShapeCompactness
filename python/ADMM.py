@@ -22,6 +22,16 @@ def compactness_seg_prob_map(img, prob_map, P):
 
 
 def compute_weights(img, kernel, sigma, eps):
+    """
+    This function compute the weights of the graph representing img.
+    The weights 0 <= w_i <= 1 will be determined from the difference between the nodes: 1 for identical value,
+    0 for completely different.
+    :param img: The image, as a (n,n) matrix.
+    :param kernel: A binary mask of (k,k) shape.
+    :param sigma: Parameter for the weird exponential at the end.
+    :param eps: Other parameter for the weird exponential at the end.
+    :return: A float valued (n^2,n^2) symmetric matrix. Diagonal is empty
+    """
     W, H = img.shape
     N = img.size
     X = img.flat.copy()
@@ -45,7 +55,7 @@ def compute_weights(img, kernel, sigma, eps):
     T1 = np.tile(np.arange(N), K)
     T2 = neighs.flat.copy()
     Z = T1 <= T2  # We need to reverse the test from the Matlab version
-    # Indeed, we are selecting the true ones, whereas in the Matlab they are deleted
+    # Matlab delete the Z, we keep them.
     T1 = T1[Z]
     T2 = T2[Z]
 
@@ -54,11 +64,6 @@ def compute_weights(img, kernel, sigma, eps):
     1 for the identical values, 0 for complete different ones
     '''
     diff = (1 - eps) * np.exp(-sigma * (X[T1] - X[T2])**2) + eps
-    # diff = np.ones(len(T1))
-    assert(np.min(diff) >= 0)
-    assert(np.min(diff) <= 1)
-    assert(np.count_nonzero(diff) == np.count_nonzero(Z))
-
     M = sci.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
 
     return M + M.T
