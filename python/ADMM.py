@@ -16,7 +16,7 @@ def compactness_seg_prob_map(img, prob_map, P):
 
     X = img.copy()
 
-    M = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
+    W = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
 
     return prob_map >= 0.5, prob_map >= 0.5, 0
 

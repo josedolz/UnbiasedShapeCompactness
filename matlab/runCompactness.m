@@ -41,9 +41,9 @@ switch example
     case 1
         disp(' Running Aorta MRI example...');
         % Load data
-        load('../Data/mriAorta.mat'); % CT image
-        load('../Data/gtMRIAorta.mat'); % Ground truth
-        load('../Data/probMapMRIAorta.mat'); % CNN result (prob Map)
+        load('Data/mriAorta.mat'); % CT image
+        load('Data/gtMRIAorta.mat'); % Ground truth
+        load('Data/probMapMRIAorta.mat'); % CNN result (prob Map)
         img = mri;
 
         % General parameters
@@ -55,9 +55,9 @@ switch example
     case 2
         disp(' Running Esophagus CT example...');
         % Load data
-        load('../Data/ctEsophagus.mat'); % CT image
-        load('../Data/gtEsophagus.mat'); % Ground truth
-        load('../Data/probMapEsophagus.mat'); % CNN result (prob Map)
+        load('Data/ctEsophagus.mat'); % CT image
+        load('Data/gtEsophagus.mat'); % Ground truth
+        load('Data/probMapEsophagus.mat'); % CNN result (prob Map)
         img = ct;
 
         % General parameters
@@ -69,9 +69,9 @@ switch example
     case 3
         disp(' Running Right Ventricle MRI example...');
         % Load data
-        load('../Data/mriRV.mat'); % CT image
-        load('../Data/gtRV.mat'); % Ground truth
-        load('../Data/probMapRV.mat'); % CNN result (prob Map)
+        load('Data/mriRV.mat'); % CT image
+        load('Data/gtRV.mat'); % Ground truth
+        load('Data/probMapRV.mat'); % CNN result (prob Map)
         img = mri;
 
         % General parameters
@@ -83,9 +83,9 @@ switch example
     otherwise
         disp(' Running Aorta CT example...');
         % Load data
-        load('../Data/ctAorta.mat'); % CT image
-        load('../Data/gtCTAorta.mat'); % Ground truth
-        load('../Data/probMapCTAorta.mat'); % CNN result (prob Map)
+        load('Data/ctAorta.mat'); % CT image
+        load('Data/gtCTAorta.mat'); % Ground truth
+        load('Data/probMapCTAorta.mat'); % CNN result (prob Map)
         img = ct;
 
         % General parameters
