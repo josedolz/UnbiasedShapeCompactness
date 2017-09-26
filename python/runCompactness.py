@@ -113,4 +113,4 @@ if __name__ == "__main__":
     print(diceGCs, precisionGCs, recallGCs)
     print(diceCNN, precisionCNN, recallCNN)
 
-    draw_results(img, grd_truth, segCNN, segGCs, segADMM)
+    # draw_results(img, grd_truth, segCNN, segGCs, segADMM)

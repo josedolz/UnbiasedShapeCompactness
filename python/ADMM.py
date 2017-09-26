@@ -3,6 +3,7 @@
 import graph_tool as gt
 import numpy as np
 import scipy as sci
+import scipy.sparse
 
 
 def compactness_seg_prob_map(img, prob_map, P):
@@ -17,6 +18,20 @@ def compactness_seg_prob_map(img, prob_map, P):
     X = img.copy()
 
     W = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
+    assert(W.sum(0).all() == W.sum(1).all())
+    L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
+    # I assume this is just artifacts from the float approximations
+
+    priors = prob_map.copy()
+
+    u_0 = np.zeros((N, 2))
+    u_0[:, 0] = -np.log(small_eps + (1 - priors.flat[:]))
+    u_0[:, 1] = -np.log(small_eps + priors.flat[:])
+
+    p = np.log(prob_map.flat[:])
+
+    v_0 = u_0.copy()
+    v = v_0.copy()
 
     return prob_map >= 0.5, prob_map >= 0.5, 0
 
@@ -77,4 +92,5 @@ if __name__ == "__main__":
     k[1, 1] = 0
 
     output = compute_weights(input, k, 100, 1e-10).toarray()
+    L = sci.sparse.spdiags(output.sum(0), 0, 16, 16) - output
     print(output)
