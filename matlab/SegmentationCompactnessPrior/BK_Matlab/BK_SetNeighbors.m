@@ -1,13 +1,13 @@
 function BK_SetNeighbor(Handle,Weights)
 % BK_SetNeighbors   Set sparse pairwise connectivity of all sites.
-%     BK_SetNeighbors(Handle,Weights) determines which sites are 
-%     neighbors and thereby have a weighted Potts interaction. 
-%     Weights is a sparse NumSites-by-NumSites matrix of doubles, where 
+%     BK_SetNeighbors(Handle,Weights) determines which sites are
+%     neighbors and thereby have a weighted Potts interaction.
+%     Weights is a sparse NumSites-by-NumSites matrix of doubles, where
 %     Weights(i,j) > 0  indicates that sites i and j are neighbors
-%     with a Sparse potential of the given strength. 
-%     IMPORTANT: only the upper-triangular area of Weights is consulted 
-%     because the connectivity is undirected. 
-%     SetNeighbors cannot currently be called after Minimize. 
+%     with a Sparse potential of the given strength.
+%     IMPORTANT: only the upper-triangular area of Weights is consulted
+%     because the connectivity is undirected.
+%     SetNeighbors cannot currently be called after Minimize.
 
 BK_LoadLib();
 NumSites = bk_matlab('bk_getnumsites',Handle);

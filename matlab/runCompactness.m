@@ -1,14 +1,14 @@
 % Copyright (c) 2017, Jose Dolz .All rights reserved.
-% 
+%
 % Redistribution and use in source and binary forms, with or without modification,
 % are permitted provided that the following conditions are met:
-% 
+%
 %     1. Redistributions of source code must retain the above copyright notice,
 %        this list of conditions and the following disclaimer.
 %     2. Redistributions in binary form must reproduce the above copyright notice,
 %        this list of conditions and the following disclaimer in the documentation
 %        and/or other materials provided with the distribution.
-% 
+%
 %     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 %     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
 %     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -17,7 +17,7 @@
 %     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 %     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 %     OTHER DEALINGS IN THE SOFTWARE.
-% 
+%
 % Jose Dolz. Dec, 2017.
 % email: jose.dolz.upv@gmail.com
 % LIVIA Department, ETS, Montreal.
@@ -47,10 +47,10 @@ switch example
         img = mri;
 
         % General parameters
-        ParamsADMM.sigma = 25; 
+        ParamsADMM.sigma = 25;
         % Specific ADMM parameters
-        ParamsADMM.lambda = 5000; % Compactness prior 
-        ParamsADMM.lambda0 = 0.5; % MRF binary potential 
+        ParamsADMM.lambda = 5000; % Compactness prior
+        ParamsADMM.lambda0 = 0.5; % MRF binary potential
         ParamsADMM.mu1 = 2000;
     case 2
         disp(' Running Esophagus CT example...');
@@ -61,9 +61,9 @@ switch example
         img = ct;
 
         % General parameters
-        ParamsADMM.sigma = 1000; 
+        ParamsADMM.sigma = 1000;
         % Specific ADMM parameters
-        ParamsADMM.lambda = 1000; % Compactness prior 
+        ParamsADMM.lambda = 1000; % Compactness prior
         ParamsADMM.lambda0 = 0.05; % MRF binary potential
         ParamsADMM.mu1 = 2000;
     case 3
@@ -75,10 +75,10 @@ switch example
         img = mri;
 
         % General parameters
-        ParamsADMM.sigma = 100;  
+        ParamsADMM.sigma = 100;
         % Specific ADMM parameters
-        ParamsADMM.lambda = 20000; % Compactness prior 
-        ParamsADMM.lambda0 = 0.5; % MRF binary potential 
+        ParamsADMM.lambda = 20000; % Compactness prior
+        ParamsADMM.lambda0 = 0.5; % MRF binary potential
         ParamsADMM.mu1 = 5000;
     otherwise
         disp(' Running Aorta CT example...');
@@ -89,9 +89,9 @@ switch example
         img = ct;
 
         % General parameters
-        ParamsADMM.sigma = 1000;  
+        ParamsADMM.sigma = 1000;
         % Specific ADMM parameters
-        ParamsADMM.lambda = 3000; % Compactness prior 
+        ParamsADMM.lambda = 3000; % Compactness prior
         ParamsADMM.lambda0 = 0.5; % MRF binary potential
         ParamsADMM.mu1 = 2000;
 end
@@ -109,9 +109,9 @@ ParamsADMM.Kernel((kernelSize+1)/2,(kernelSize+1)/2) = 0;
 ParamsADMM.eps = 1e-10;
 
 % Method parameters (Common to all four applications)
-ParamsADMM.mu2 = 50; 
-ParamsADMM.mu1Fact = 1.01; % Set between 1 and 1.01 
-ParamsADMM.mu2Fact = 1.01; % Set between 1 and 1.01 
+ParamsADMM.mu2 = 50;
+ParamsADMM.mu1Fact = 1.01; % Set between 1 and 1.01
+ParamsADMM.mu2Fact = 1.01; % Set between 1 and 1.01
 
 ParamsADMM.solvePCG = true; % Use pre-conditioned CG algorithm
 ParamsADMM.maxLoops = 1000; % Number of iterations
@@ -129,7 +129,7 @@ BK_LoadLib;
 
 % Threshold the probability map from the CNN
 % NOTE: This probability map can come from any other model (i.e. loglikelihood, chan-vese,etc...)
-CNNSeg = zeros(size(probMap));        
+CNNSeg = zeros(size(probMap));
 CNNSeg(find(probMap>=0.5)) = 1;
 
 ParamsADMM.GroundTruth = gt;
@@ -151,5 +151,5 @@ disp(num2str(recallCNN))
 
 
 if options.display
-    drawResults(img, gt, CNNSeg, SegGCs, SegADMM); 
+    drawResults(img, gt, CNNSeg, SegGCs, SegADMM);
 end

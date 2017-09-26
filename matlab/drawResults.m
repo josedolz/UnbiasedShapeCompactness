@@ -9,7 +9,7 @@ for k = 1:length(contour)
     boundary = contour{k};
     plot(boundary(:,2), boundary(:,1), 'Color','g' ,'LineWidth', 2)
 end
-   
+
 subplot(1,4,2)
 imshow(img,[])
 hold on
