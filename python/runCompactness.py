@@ -16,8 +16,8 @@ def load_and_config(verbose):
     if verbose:
         print("RIGHTVENT_MRI")
 
-    img = wrap_load('mri', '../Data/mriRV.mat')    
-    grd_truth = wrap_load('gt', '../Data/gtRV.mat')    
+    img = wrap_load('mri', '../Data/mriRV.mat')
+    grd_truth = wrap_load('gt', '../Data/gtRV.mat')
     probMap = wrap_load('probMap', '../Data/probMapRV.mat')
 
     if verbose:
@@ -37,13 +37,13 @@ def load_and_config(verbose):
     kernel_size = 3
     ParamsADMM['kernel'] = np.ones((kernel_size, kernel_size), np.uint8)
     ParamsADMM['kernel'][kernel_size//2, kernel_size//2] = 0
-    
+
     if verbose:
         print(ParamsADMM['kernel'])
     ParamsADMM['eps'] = 1e-10
 
     # Method parameters (Common to all four applications)
-    ParamsADMM['mu2'] = 50 
+    ParamsADMM['mu2'] = 50
     ParamsADMM['mu1Fact'] = 1.01  # Set between 1 and 1.01
     ParamsADMM['mu2Fact'] = 1.01  # Set between 1 and 1.01
 
@@ -113,4 +113,4 @@ if __name__ == "__main__":
     print(diceGCs, precisionGCs, recallGCs)
     print(diceCNN, precisionCNN, recallCNN)
 
-    # draw_results(img, grd_truth, segCNN, segGCs, segADMM)
+    draw_results(img, grd_truth, segCNN, segGCs, segADMM)
