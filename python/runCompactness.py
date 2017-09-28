@@ -13,12 +13,33 @@ def wrap_load(name, path):
 
 
 def load_and_config(verbose):
-    if verbose:
-        print("RIGHTVENT_MRI")
+    # if verbose:
+    #     print("RIGHTVENT_MRI")
 
-    img = wrap_load('mri', '../Data/mriRV.mat')
-    grd_truth = wrap_load('gt', '../Data/gtRV.mat')
-    probMap = wrap_load('probMap', '../Data/probMapRV.mat')
+    # img = wrap_load('mri', '../Data/mriRV.mat')
+    # grd_truth = wrap_load('gt', '../Data/gtRV.mat')
+    # probMap = wrap_load('probMap', '../Data/probMapRV.mat')
+
+    # if verbose:
+    #     print("AORTA_MRI")
+
+    # img = wrap_load('mri', '../Data/mriAorta.mat')
+    # grd_truth = wrap_load('gt', '../Data/gtMRIAorta.mat')
+    # probMap = wrap_load('probMap', '../Data/probMapMRIAorta.mat')
+
+    # if verbose:
+    #     print("ESOPHAGUS_CT")
+
+    # img = wrap_load('ct', '../Data/ctEsophagus.mat')
+    # grd_truth = wrap_load('gt', '../Data/gtEsophagus.mat')
+    # probMap = wrap_load('probMap', '../Data/probMapEsophagus.mat')
+
+    if verbose:
+        print("AORTA_CT")
+
+    img = wrap_load('ct', '../Data/ctAorta.mat')
+    grd_truth = wrap_load('gt', '../Data/gtCTAorta.mat')
+    probMap = wrap_load('probMap', '../Data/probMapCTAorta.mat')
 
     if verbose:
         print(img.shape, grd_truth.shape, probMap.shape)

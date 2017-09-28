@@ -55,6 +55,7 @@ hbk = BK_Create(N,nnz(P.Kernel)*N);
 BK_SetNeighbors(hbk,W);
 BK_SetUnary(hbk,U0);
 E = BK_Minimize(hbk);
+disp(num2str(E))
 y0 = double(BK_GetLabeling(hbk)) - 1;
 
 Seg0 = reshape(y0, size(Image));
