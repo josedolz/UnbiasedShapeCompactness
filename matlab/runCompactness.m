@@ -35,7 +35,7 @@ global ESOPHAGUS_CT; ESOPHAGUS_CT = 2;
 global RIGHTVENT_MRI; RIGHTVENT_MRI = 3;
 global AORTA_CT; AORTA_CT = 4;
 
-example = AORTA_CT;
+example = RIGHTVENT_MRI;
 
 switch example
     case 1

@@ -34,16 +34,32 @@ def compactness_seg_prob_map(img, prob_map, P):
     v_0 = u_0.copy()
     v = v_0.copy()
 
-    g = eg.create(N, np.count_nonzero(P["kernel"]))
+    y_0, E = graph_cut(W, u_0, P["kernel"], N)
+    seg_0 = y_0.reshape(img.shape)
+
+    seg = prob_map >= 0.5
+    return seg, seg_0, 0
+
+
+def graph_cut(W, u_0, kernel, N):
+    """
+    Perform the graph cut for the initial segmentation.
+    The current implementation is not fully functionnal, but the results for RIGHTVENT_MRI
+    are usable to develop the rest of the algorithm.
+    :param W: The weights matrices computed previously
+    :param u_0: The unary weights for the graphcut: based on prob_map
+    :param kernel: The kernel used
+    :param N: size of the image
+    :return: The segmentation as a vector, the Energy
+    """
+    g = eg.create(N, np.count_nonzero(kernel))
     eg.set_neighbors(g, W)
     eg.set_unary(g, u_0)
     E = eg.minimize(g)
     print(E)
     y_0 = eg.get_labeling(g, N)
-    seg_0 = y_0.reshape(img.shape)
 
-    seg = prob_map >= 0.5
-    return seg, seg_0, 0
+    return y_0, E
 
 
 def compute_weights(img, kernel, sigma, eps):
