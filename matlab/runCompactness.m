@@ -113,7 +113,7 @@ ParamsADMM.mu2 = 50;
 ParamsADMM.mu1Fact = 1.01; % Set between 1 and 1.01
 ParamsADMM.mu2Fact = 1.01; % Set between 1 and 1.01
 
-ParamsADMM.solvePCG = true; % Use pre-conditioned CG algorithm
+ParamsADMM.solvePCG = false; % Use pre-conditioned CG algorithm
 ParamsADMM.maxLoops = 1000; % Number of iterations
 
 % Display options

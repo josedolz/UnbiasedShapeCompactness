@@ -49,7 +49,7 @@ def load_and_config(verbose):
     ParamsADMM['sigma'] = 100
     ParamsADMM['lambda'] = 20000
     ParamsADMM['lambda0'] = 0.5
-    ParamsADMM['mul'] = 5000
+    ParamsADMM['mu1'] = 5000
 
     # General parameters
     ParamsADMM['imageScale'] = 1
@@ -68,7 +68,7 @@ def load_and_config(verbose):
     ParamsADMM['mu1Fact'] = 1.01  # Set between 1 and 1.01
     ParamsADMM['mu2Fact'] = 1.01  # Set between 1 and 1.01
 
-    ParamsADMM['solvePCG'] = True  # Use pre-conditioned CG algorithm
+    ParamsADMM['solvePCG'] = False  # Use pre-conditioned CG algorithm
     ParamsADMM['maxLoops'] = 1000  # Number of iterations
 
     # Display options

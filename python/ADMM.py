@@ -18,7 +18,7 @@ def compactness_seg_prob_map(img, prob_map, P):
 
     X = img.copy()
 
-    W = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
+    W = commu1te_weights(img, P["kernel"], P["sigma"], P["eps"])
     assert(W.sum(0).all() == W.sum(1).all())
     L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
     # I assume this is just artifacts from the float approximations
@@ -37,8 +37,60 @@ def compactness_seg_prob_map(img, prob_map, P):
     y_0, E = graph_cut(W, u_0, P["kernel"], N)
     seg_0 = y_0.reshape(img.shape)
 
-    seg = prob_map >= 0.5
+    y = admm(P, y_0, N, L)
+    seg = y.reshape(img.shape)
+
     return seg, seg_0, 0
+
+
+def admm(P, y_0, N, L):
+    mu1 = P["mu1"]
+    mu2 = P["mu2"]
+    _lambda = P["lambda"]
+
+    y = y_0.copy()
+    c = np.sum(y)
+    o = np.ones((1, N))
+    u = np.zeros((1, N))
+    v = 0
+    tt = y.T * L * y
+
+    cost_1_prev = 0
+    for i in range(P["maxLoops"]):
+        # Update z
+        alpha = (P["lambda"] / c) * tt
+
+        break
+
+        if P["solvePCG"]:
+            tmp = 0
+        else:
+            a = (alpha*L + mu1 * sci.sparse.identity(N))
+            b = (mu1 * (y + u) + mu2 * (c + v))
+            tmp = np.linalg.solve(a, b)
+
+        const = (1 / mu1) * (1 / mu2 + N / mu1) ** -1
+        z = tmp - const * np.sum(tmp) * o
+
+        # Update c
+        rr = z.T * L * z
+        beta = .5 * _lambda * tt * rr
+
+        qq = np.sum(z) - v
+
+        R = np.roots([1, -qq, -beta/mu2])
+        R = R[np.isreal(R)]
+
+        if not R:
+            print("No roots found...")
+            P["lambda"] /= 10
+            return admm(P, y_0, N, L)
+
+        break
+
+    return y_0
+
+
 
 
 def graph_cut(W, u_0, kernel, N):
@@ -46,7 +98,7 @@ def graph_cut(W, u_0, kernel, N):
     Perform the graph cut for the initial segmentation.
     The current implementation is not fully functionnal, but the results for RIGHTVENT_MRI
     are usable to develop the rest of the algorithm.
-    :param W: The weights matrices computed previously
+    :param W: The weights matrices commu1ted previously
     :param u_0: The unary weights for the graphcut: based on prob_map
     :param kernel: The kernel used
     :param N: size of the image
@@ -62,9 +114,9 @@ def graph_cut(W, u_0, kernel, N):
     return y_0, E
 
 
-def compute_weights(img, kernel, sigma, eps):
+def commu1te_weights(img, kernel, sigma, eps):
     """
-    This function compute the weights of the graph representing img.
+    This function commu1te the weights of the graph representing img.
     The weights 0 <= w_i <= 1 will be determined from the difference between the nodes: 1 for identical value,
     0 for completely different.
     :param img: The image, as a (n,n) matrix.
@@ -111,12 +163,12 @@ def compute_weights(img, kernel, sigma, eps):
 
 
 if __name__ == "__main__":
-    input = (np.arange(16)+1).reshape(4, 4)
-    input[1:3, 1:3] = 17
+    inmu1t = (np.arange(16)+1).reshape(4, 4)
+    inmu1t[1:3, 1:3] = 17
 
     k = np.ones((3,3))
     k[1, 1] = 0
 
-    output = compute_weights(input, k, 100, 1e-10).toarray()
-    L = sci.sparse.spdiags(output.sum(0), 0, 16, 16) - output
-    print(output)
+    outmu1t = commu1te_weights(inmu1t, k, 100, 1e-10).toarray()
+    L = sci.sparse.spdiags(outmu1t.sum(0), 0, 16, 16) - outmu1t
+    print(outmu1t)
