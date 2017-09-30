@@ -4,6 +4,7 @@ import graph_tool.all as gt
 import numpy as np
 import scipy as sci
 import scipy.sparse
+import scipy.sparse.linalg
 import energy as eg
 
 
@@ -50,36 +51,42 @@ def admm(P, y_0, N, L):
 
     y = y_0.copy()
     c = np.sum(y)
-    o = np.ones((1, N))
-    u = np.zeros((1, N))
+    o = np.ones(N)
+    u = np.zeros(N)
     v = 0
-    tt = y.T * L * y
+    tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
     cost_1_prev = 0
     for i in range(P["maxLoops"]):
         # Update z
-        alpha = (P["lambda"] / c) * tt
-
-        break
+        alpha = (_lambda / c) * tt
 
         if P["solvePCG"]:
             tmp = 0
         else:
-            a = (alpha*L + mu1 * sci.sparse.identity(N))
+            a = (alpha*L + mu1 * scipy.sparse.identity(N))
             b = (mu1 * (y + u) + mu2 * (c + v))
-            tmp = np.linalg.solve(a, b)
+            print(a.shape)
+            print(b.shape)
+            tmp = sci.sparse.linalg.spsolve(a, b)
+
+            # assert(np.allclose(np.dot(a, tmp), b))
 
         const = (1 / mu1) * (1 / mu2 + N / mu1) ** -1
         z = tmp - const * np.sum(tmp) * o
 
         # Update c
-        rr = z.T * L * z
+        rr = z.T.dot(L.dot(z))
         beta = .5 * _lambda * tt * rr
 
         qq = np.sum(z) - v
 
-        R = np.roots([1, -qq, -beta/mu2])
+        eq = [1, -qq, -beta/mu2]
+        print(eq)
+        R = np.roots(eq)
         R = R[np.isreal(R)]
+
+        break
 
         if not R:
             print("No roots found...")
@@ -89,8 +96,6 @@ def admm(P, y_0, N, L):
         break
 
     return y_0
-
-
 
 
 def graph_cut(W, u_0, kernel, N):

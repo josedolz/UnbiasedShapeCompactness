@@ -77,7 +77,9 @@ for i = 1:P.maxLoops
     if P.solvePCG
         [temp,~] = pcg(alpha*L + P.mu1*speye(N), P.mu1*(y+u) + P.mu2*(c+v));
     else
-        temp = (alpha*L + P.mu1*speye(N))\(P.mu1*(y+u) + P.mu2*(c+v));
+        a = (alpha*L + P.mu1*speye(N));
+        b = (P.mu1*(y+u) + P.mu2*(c+v));
+        temp = a \ b;
     end
 
     const = (1/P.mu1)*(1/P.mu2 + N/P.mu1).^(-1);
