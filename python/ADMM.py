@@ -45,8 +45,8 @@ def compactness_seg_prob_map(img, prob_map, P):
 
 
 def admm(P, y_0, N, L):
-    mu1 = P["mu1"]
-    mu2 = P["mu2"]
+    _mu1 = P["mu1"]
+    _mu2 = P["mu2"]
     _lambda = P["lambda"]
 
     y = y_0.copy()
@@ -64,15 +64,11 @@ def admm(P, y_0, N, L):
         if P["solvePCG"]:
             tmp = 0
         else:
-            a = (alpha*L + mu1 * scipy.sparse.identity(N))
-            b = (mu1 * (y + u) + mu2 * (c + v))
-            print(a.shape)
-            print(b.shape)
+            a = (alpha*L + _mu1 * scipy.sparse.identity(N))
+            b = (_mu1 * (y + u) + _mu2 * (c + v))
             tmp = sci.sparse.linalg.spsolve(a, b)
 
-            # assert(np.allclose(np.dot(a, tmp), b))
-
-        const = (1 / mu1) * (1 / mu2 + N / mu1) ** -1
+        const = (1 / _mu1) * (1 / _mu2 + N / _mu1) ** -1
         z = tmp - const * np.sum(tmp) * o
 
         # Update c
@@ -81,17 +77,16 @@ def admm(P, y_0, N, L):
 
         qq = np.sum(z) - v
 
-        eq = [1, -qq, -beta/mu2]
-        print(eq)
+        eq = [1, -qq, 0, -beta/_mu2]
         R = np.roots(eq)
         R = R[np.isreal(R)]
 
-        break
-
-        if not R:
+        if len(R) == 0:
             print("No roots found...")
             P["lambda"] /= 10
             return admm(P, y_0, N, L)
+
+        c = np.max(R)
 
         break
 
