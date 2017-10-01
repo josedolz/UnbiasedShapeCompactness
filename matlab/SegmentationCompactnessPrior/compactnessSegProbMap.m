@@ -119,19 +119,19 @@ for i = 1:P.maxLoops
     u = u + (y-z);
     v = v + (c-sum(z));
 
-     Seg = reshape(y, size(Image));
+    Seg = reshape(y, size(Image));
 
-     if P.dispSeg
+    if P.dispSeg
         figure(100),
         subplot(1,5,1), imshow(Image,[]);
         subplot(1,5,2), imshow(P.GroundTruth,[]);
         subplot(1,5,3), imshow(probMap,[]);
         subplot(1,5,4), imshow(Seg0,[]);
         subplot(1,5,5), imshow(Seg,[]);
-%
-%     %figure(2), hist(z,100);
+        %
+        %     %figure(2), hist(z,100);
         drawnow;
-     end
+    end
 
     cost1 = p'*y;
     cost2 = P.lambda*(tt^2/sum(y));
