@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import graph_tool.all as gt
 import numpy as np
 import scipy as sci
 import scipy.sparse
@@ -10,19 +9,19 @@ import energy as eg
 
 def compactness_seg_prob_map(img, prob_map, P):
     """
-    Dummy function for the segmentation
+    Wrapper function performing the graph cut and the ADMM
+    :param img: The gray-scale image to segment
+    :param prob_map: the probabilities for segmentation
+    :param P: Dictionary containing all the parameters.
+    :return: admm_segmentation, graph_cut segmentation, res code
     """
     small_eps = 1e-6
 
-    H, W = img.shape
     N = img.size
 
-    X = img.copy()
-
-    W = commu1te_weights(img, P["kernel"], P["sigma"], P["eps"])
-    assert(W.sum(0).all() == W.sum(1).all())
+    W = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
     L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
-    # I assume this is just artifacts from the float approximations
+    # This is artifacts from the float approximations
 
     priors = prob_map.flat
 
@@ -33,21 +32,22 @@ def compactness_seg_prob_map(img, prob_map, P):
     p = np.log(prob_map.flat[:])
 
     v_0 = u_0.copy()
-    v = v_0.copy()
+    V = v_0.copy()
 
-    y_0, E = graph_cut(W, u_0, P["kernel"], N)
+    y_0, E, g = graph_cut(W, u_0, P["kernel"], N)
     seg_0 = y_0.reshape(img.shape)
 
-    y = admm(P, y_0, N, L)
+    y, res = admm(P, y_0, N, L, V, p, g)
     seg = y.reshape(img.shape)
 
-    return seg, seg_0, 0
+    return seg, seg_0, res
 
 
-def admm(P, y_0, N, L):
+def admm(P, y_0, N, L, V, p, g):
     _mu1 = P["mu1"]
     _mu2 = P["mu2"]
     _lambda = P["lambda"]
+    res = 0
 
     y = y_0.copy()
     c = np.sum(y)
@@ -86,19 +86,39 @@ def admm(P, y_0, N, L):
             P["lambda"] /= 10
             return admm(P, y_0, N, L)
 
-        c = np.max(R)
+        c = np.real(np.max(R))
 
-        break
+        # Update y
+        gamma = .5 * (_lambda / c) * rr
 
-    return y_0
+        V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + P["lambda0"])
+        eg.set_unary(g, V)
+        E = eg.minimize(g)
+        y = eg.get_labeling(g, N)
+
+        tt = y.T.dot(L.dot(y))
+
+        # Update Lagrangian
+        u = u + (y - z)
+        v = v + (c - np.sum(z))
+        _mu1 *= P["mu1Fact"]
+        _mu2 *= P["mu2Fact"]
+
+        cost_1 = p.T.dot(y)
+        if cost_1_prev == cost_1:
+            res = 0
+            break
+        cost_1_prev = cost_1
+
+    return y, res
 
 
 def graph_cut(W, u_0, kernel, N):
     """
     Perform the graph cut for the initial segmentation.
-    The current implementation is not fully functionnal, but the results for RIGHTVENT_MRI
+    The current implementation is not fully functional, but the results for RIGHTVENT_MRI
     are usable to develop the rest of the algorithm.
-    :param W: The weights matrices commu1ted previously
+    :param W: The weights matrices computed previously
     :param u_0: The unary weights for the graphcut: based on prob_map
     :param kernel: The kernel used
     :param N: size of the image
@@ -111,12 +131,12 @@ def graph_cut(W, u_0, kernel, N):
     print(E)
     y_0 = eg.get_labeling(g, N)
 
-    return y_0, E
+    return y_0, E, g
 
 
-def commu1te_weights(img, kernel, sigma, eps):
+def compute_weights(img, kernel, sigma, eps):
     """
-    This function commu1te the weights of the graph representing img.
+    This function compute the weights of the graph representing img.
     The weights 0 <= w_i <= 1 will be determined from the difference between the nodes: 1 for identical value,
     0 for completely different.
     :param img: The image, as a (n,n) matrix.
@@ -163,12 +183,12 @@ def commu1te_weights(img, kernel, sigma, eps):
 
 
 if __name__ == "__main__":
-    inmu1t = (np.arange(16)+1).reshape(4, 4)
-    inmu1t[1:3, 1:3] = 17
+    input = (np.arange(16) + 1).reshape(4, 4)
+    input[1:3, 1:3] = 17
 
-    k = np.ones((3,3))
+    k = np.ones((3, 3))
     k[1, 1] = 0
 
-    outmu1t = commu1te_weights(inmu1t, k, 100, 1e-10).toarray()
-    L = sci.sparse.spdiags(outmu1t.sum(0), 0, 16, 16) - outmu1t
-    print(outmu1t)
+    output = compute_weights(input, k, 100, 1e-10).toarray()
+    L = sci.sparse.spdiags(output.sum(0), 0, 16, 16) - output
+    print(output)
