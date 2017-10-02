@@ -4,7 +4,7 @@ import numpy as np
 import scipy as sci
 import scipy.sparse
 import scipy.sparse.linalg
-import energy as eg
+from energy import Energy
 
 
 def compactness_seg_prob_map(img, prob_map, P):
@@ -34,16 +34,16 @@ def compactness_seg_prob_map(img, prob_map, P):
     v_0 = u_0.copy()
     V = v_0.copy()
 
-    y_0, E, g = graph_cut(W, u_0, P["kernel"], N)
+    y_0, E, eg = graph_cut(W, u_0, P["kernel"], N)
     seg_0 = y_0.reshape(img.shape)
 
-    y, res = admm(P, y_0, N, L, V, p, g)
+    y, res = admm(P, y_0, N, L, V, p, eg)
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(P, y_0, N, L, V, p, g):
+def admm(P, y_0, N, L, V, p, eg):
     _mu1 = P["mu1"]
     _mu2 = P["mu2"]
     _lambda = P["lambda"]
@@ -92,9 +92,9 @@ def admm(P, y_0, N, L, V, p, g):
         gamma = .5 * (_lambda / c) * rr
 
         V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + P["lambda0"])
-        eg.set_unary(g, V)
-        E = eg.minimize(g)
-        y = eg.get_labeling(g, N)
+        eg.set_unary(V)
+        _ = eg.minimize()
+        y = eg.get_labeling()
 
         tt = y.T.dot(L.dot(y))
 
@@ -124,14 +124,14 @@ def graph_cut(W, u_0, kernel, N):
     :param N: size of the image
     :return: The segmentation as a vector, the Energy
     """
-    g = eg.create(N, np.count_nonzero(kernel))
-    eg.set_neighbors(g, W)
-    eg.set_unary(g, u_0)
-    E = eg.minimize(g)
+    eg = Energy(N, np.count_nonzero(kernel)*N)
+    eg.set_neighbors(W)
+    eg.set_unary(u_0)
+    E = eg.minimize()
     print(E)
-    y_0 = eg.get_labeling(g, N)
+    y_0 = eg.get_labeling()
 
-    return y_0, E, g
+    return y_0, E, eg
 
 
 def compute_weights(img, kernel, sigma, eps):
