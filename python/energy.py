@@ -19,12 +19,22 @@ class Energy(object):
         for i,j,w  in zip(W.row, W.col, W.data):
             self._g.add_edge(i, j, w, w)
 
-    def set_unary(self, u_0):
-        for i, u in enumerate(u_0):
-            self._g.add_tedge(i, u[1], u[0])
+    def set_unary(self, U):
+        if not self._was_minimized:
+            for i, u in enumerate(U):
+                self._g.add_tedge(i, u[1], u[0])
+        else:
+            diff = U - self._prev_u
+            for i, u in enumerate(diff):
+                self._g.add_tedge(i, u[1], u[0])
+
+        self._prev_u = u.copy()
+        # self._was_minimized = True
 
     def minimize(self):
-        return self._g.maxflow()
+        e = self._g.maxflow()
+
+        return e
 
     def get_labeling(self):
         labels = self._g.get_grid_segments(np.arange(self._N))
