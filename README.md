@@ -6,7 +6,7 @@ This repository contains the code employed in our work: "Unbiased Shape Compactn
 A version of the paper has been submitted to ArXiv [paper](https://arxiv.org/pdf/1704.08908.pdf)
 
 ## Running the code
-The code is available only in matlab at the moment. 
+The code is available only in matlab and python at the moment.
 
 If you use this code for your research, please consider citing the original paper:
 
@@ -14,19 +14,23 @@ If you use this code for your research, please consider citing the original pape
 
 ### Matlab
 To run it, in the matlab folder, just execute the following function:
-
 ```
 runCompactness
 ```
-Or alternatively, run in your terminal:
-```
-make
-```
-that will launch a headless matlab instance.
 
 Inside this function you can select which example from the paper you want to reproduce by assigning to the variable example one of the four options (AORTA_MRI, ESOPHAGUS_CT, RIGHTVENT_MRI, AORTA_CT). Compactness parameters are fixed as used in the paper.
 
 ### Python
-The python implementatio is underway. 
-At the moment, only the loading, display and computeWeights functions have been implemented. 
-To test the current state, type `./runCompactness.py` in your terminal
+The python implementation is a translation from the Matlab code, and wasn't used in the original paper. Some minor features are missing, but the results are the same. It requires:
+* Python 3
+* Numpy
+* Scipy
+* [PyMaxflow](https://github.com/pmneila/PyMaxflow)
+
+You can test it with `./runCompactness.py`.
+
+#### Todo
+* Spit admm main loop in several functions
+* Add missing sanity tests after Laplacian update
+* Argument to select example from command line
+    * Fix the mess used for the parameters

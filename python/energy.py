@@ -33,7 +33,7 @@ class Energy(object):
         self._prev_u[:] = U
 
     def minimize(self):
-        e = self._g.maxflow(reuse_trees=False)
+        e = self._g.maxflow()
         self._was_minimized = True
 
         return e
