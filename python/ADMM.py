@@ -177,7 +177,7 @@ def compute_weights(img, kernel, sigma, eps):
 
     '''
     This represent the difference between the nodes
-    1 for the identical values, 0 for complete different ones
+    1 for the identical values, 0 for completely different ones
     '''
     diff = (1 - eps) * np.exp(-sigma * (X[T1] - X[T2])**2) + eps
     M = sci.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
@@ -186,12 +186,12 @@ def compute_weights(img, kernel, sigma, eps):
 
 
 if __name__ == "__main__":
-    input = (np.arange(16) + 1).reshape(4, 4)
-    input[1:3, 1:3] = 17
+    input_ = (np.arange(16) + 1).reshape(4, 4)
+    input_[1:3, 1:3] = 17
 
     k = np.ones((3, 3))
     k[1, 1] = 0
 
-    output = compute_weights(input, k, 100, 1e-10).toarray()
-    L = sci.sparse.spdiags(output.sum(0), 0, 16, 16) - output
-    print(output)
+    output_ = compute_weights(input_, k, 100, 1e-10).toarray()
+    L = sci.sparse.spdiags(output_.sum(0), 0, 16, 16) - output_
+    print(output_)

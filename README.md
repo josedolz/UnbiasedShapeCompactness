@@ -30,7 +30,8 @@ The python implementation is a translation from the Matlab code, and wasn't used
 You can test it with `./runCompactness.py`.
 
 #### Todo
-* Spit admm main loop in several functions
+* Split admm main loop in several functions
 * Add missing sanity tests after Laplacian update
 * Argument to select example from command line
     * Fix the mess used for the parameters
+* Update the visualisation to match the Matlab version
