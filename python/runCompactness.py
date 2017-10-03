@@ -13,12 +13,20 @@ def wrap_load(name, path):
 
 
 def load_and_config(verbose):
+    ParamsADMM = {}
+
     # if verbose:
     #     print("RIGHTVENT_MRI")
 
     # img = wrap_load('mri', '../Data/mriRV.mat')
     # grd_truth = wrap_load('gt', '../Data/gtRV.mat')
     # probMap = wrap_load('probMap', '../Data/probMapRV.mat')
+
+    # Problem specific parameters
+    # ParamsADMM['sigma'] = 100
+    # ParamsADMM['lambda'] = 20000
+    # ParamsADMM['lambda0'] = 0.5
+    # ParamsADMM['mu1'] = 5000
 
     # if verbose:
     #     print("AORTA_MRI")
@@ -27,12 +35,22 @@ def load_and_config(verbose):
     # grd_truth = wrap_load('gt', '../Data/gtMRIAorta.mat')
     # probMap = wrap_load('probMap', '../Data/probMapMRIAorta.mat')
 
+    # ParamsADMM['sigma'] = 25
+    # ParamsADMM['lambda'] = 5000
+    # ParamsADMM['lambda0'] = 0.5
+    # ParamsADMM['mu1'] = 2000
+
     # if verbose:
     #     print("ESOPHAGUS_CT")
 
     # img = wrap_load('ct', '../Data/ctEsophagus.mat')
     # grd_truth = wrap_load('gt', '../Data/gtEsophagus.mat')
     # probMap = wrap_load('probMap', '../Data/probMapEsophagus.mat')
+
+    # ParamsADMM['sigma'] = 1000
+    # ParamsADMM['lambda'] = 1000
+    # ParamsADMM['lambda0'] = 0.5
+    # ParamsADMM['mu1'] = 2000
 
     if verbose:
         print("AORTA_CT")
@@ -41,15 +59,15 @@ def load_and_config(verbose):
     grd_truth = wrap_load('gt', '../Data/gtCTAorta.mat')
     probMap = wrap_load('probMap', '../Data/probMapCTAorta.mat')
 
+    ParamsADMM['sigma'] = 1000
+    ParamsADMM['lambda'] = 3000
+    ParamsADMM['lambda0'] = 0.5
+    ParamsADMM['mu1'] = 2000
+
     if verbose:
         print(img.shape, grd_truth.shape, probMap.shape)
 
-    # Problem specific parameters
-    ParamsADMM = {}
-    ParamsADMM['sigma'] = 100
-    ParamsADMM['lambda'] = 20000
-    ParamsADMM['lambda0'] = 0.5
-    ParamsADMM['mu1'] = 5000
+
 
     # General parameters
     ParamsADMM['imageScale'] = 1
