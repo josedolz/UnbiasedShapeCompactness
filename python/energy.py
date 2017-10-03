@@ -12,6 +12,7 @@ class Energy(object):
         self._g.add_nodes(self._N)
 
         self._was_minimized = False
+        self._prev_u = np.zeros((self._N, 2))
 
     def set_neighbors(self, W):
         W = sci.sparse.triu(W.tocoo())
@@ -26,12 +27,16 @@ class Energy(object):
         else:
             diff = U - self._prev_u
             for i, u in enumerate(diff):
-                self._g.add_tedge(i, u[1], u[0])
+                m = self._g.add_tedge(i, u[1], u[0])
+                if m:
+                    print(i)
+                    self._g.mark_node(i)
 
-        self._prev_u = u.copy()
+        self._prev_u[:] = U
 
     def minimize(self):
-        e = self._g.maxflow()
+        e = self._g.maxflow(reuse_trees=False)
+        self._was_minimized = True
 
         return e
 

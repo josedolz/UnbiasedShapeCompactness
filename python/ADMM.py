@@ -93,7 +93,9 @@ def admm(P, y_0, N, L, V, p, eg):
 
         V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + P["lambda0"])
         eg.set_unary(V)
-        _ = eg.minimize()
+        E = eg.minimize()
+        if i == 0:
+            print("E for first iteration: {}".format(E))
         y = eg.get_labeling()
 
         tt = y.T.dot(L.dot(y))
@@ -107,6 +109,7 @@ def admm(P, y_0, N, L, V, p, eg):
         cost_1 = p.T.dot(y)
         if cost_1_prev == cost_1:
             res = 0
+            print(i)
             break
         cost_1_prev = cost_1
 

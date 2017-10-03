@@ -161,10 +161,11 @@ for i = 1:P.maxLoops
     P.mu2 = P.mu2*P.mu2Fact;
 
     if cost1Prev == cost1
-       res = 0;
-       return
+        disp(num2str(i))
+        res = 0;
+        return
     else
-       cost1Prev = cost1;
+        cost1Prev = cost1;
     end
 
 
