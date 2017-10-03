@@ -74,11 +74,11 @@ for i = 1:P.maxLoops
     %%%%%%%%%%%%%%%%%%%%%%%%%% UPDATE z %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     alpha = (P.lambda/c)*tt;
 
+    a = (alpha*L + P.mu1*speye(N));
+    b = (P.mu1*(y+u) + P.mu2*(c+v));
     if P.solvePCG
-        [temp,~] = pcg(alpha*L + P.mu1*speye(N), P.mu1*(y+u) + P.mu2*(c+v));
+        [temp,~] = pcg(a, b);
     else
-        a = (alpha*L + P.mu1*speye(N));
-        b = (P.mu1*(y+u) + P.mu2*(c+v));
         temp = a \ b;
     end
 

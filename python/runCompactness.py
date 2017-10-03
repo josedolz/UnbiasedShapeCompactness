@@ -67,8 +67,6 @@ def load_and_config(verbose):
     if verbose:
         print(img.shape, grd_truth.shape, probMap.shape)
 
-
-
     # General parameters
     ParamsADMM['imageScale'] = 1
     ParamsADMM['noise'] = 8
@@ -86,7 +84,7 @@ def load_and_config(verbose):
     ParamsADMM['mu1Fact'] = 1.01  # Set between 1 and 1.01
     ParamsADMM['mu2Fact'] = 1.01  # Set between 1 and 1.01
 
-    ParamsADMM['solvePCG'] = False  # Use pre-conditioned CG algorithm
+    ParamsADMM['solvePCG'] = True  # Use pre-conditioned CG algorithm
     ParamsADMM['maxLoops'] = 1000  # Number of iterations
 
     # Display options

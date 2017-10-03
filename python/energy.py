@@ -28,10 +28,7 @@ class Energy(object):
         else:
             diff = U - self._prev_u
             for i, u in enumerate(diff):
-                m = self._g.add_tedge(i, u[1], u[0])
-                if m:
-                    print(i)
-                    self._g.mark_node(i)
+                self._g.add_tedge(i, u[1], u[0])
 
         self._prev_u[:] = U
 

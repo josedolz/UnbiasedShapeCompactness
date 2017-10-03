@@ -61,11 +61,11 @@ def admm(P, y_0, N, L, V, p, eg):
         # Update z
         alpha = (_lambda / c) * tt
 
+        a = (alpha*L + _mu1 * scipy.sparse.identity(N))
+        b = (_mu1 * (y + u) + _mu2 * (c + v))
         if P["solvePCG"]:
-            tmp = 0
+            tmp = sci.sparse.linalg.cg(a, b)[0]
         else:
-            a = (alpha*L + _mu1 * scipy.sparse.identity(N))
-            b = (_mu1 * (y + u) + _mu2 * (c + v))
             tmp = sci.sparse.linalg.spsolve(a, b)
 
         const = (1 / _mu1) * (1 / _mu2 + N / _mu1) ** -1
