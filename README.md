@@ -32,6 +32,4 @@ You can test it with `./runCompactness.py`.
 #### Todo
 * Split admm main loop in several functions
 * Add missing sanity tests after Laplacian update
-* Argument to select example from command line
-    * Fix the mess used for the parameters
 * Update the visualisation to match the Matlab version
