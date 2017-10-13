@@ -108,13 +108,13 @@ void handleError(char *message)
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
 	if (nrhs == 0 || !mxIsChar(prhs[0]))
-		mexErrMsgTxt("Do not use bk_matlab() directly, instead use the bk functions such as BK_Create"); 
+		mexErrMsgTxt("Do not use bk_matlab() directly, instead use the bk functions such as BK_Create");
 	mwSize nameLen = mxGetN(prhs[0])*sizeof(mxChar)+1;
 	char funcName[512];
-	mxGetString(prhs[0], funcName, nameLen); 
+	mxGetString(prhs[0], funcName, nameLen);
 	FuncRegistry::LookupTable::const_iterator it = FuncRegistry::sLookup.find(funcName);
 	if (it == FuncRegistry::sLookup.end())
-		mexErrMsgTxt("Specified function does not exist within bk_matlab module"); 
+		mexErrMsgTxt("Specified function does not exist within bk_matlab module");
 	try {
 		it->second(nlhs, plhs, nrhs-1, prhs+1);
 	} catch (BKexception err) {
@@ -143,7 +143,7 @@ BK_EXPORT(bk_create)
 		plhs[0] = mxCreateNumericArray(1, &outSize, mxINT32_CLASS, mxREAL);
 		*(int*)mxGetData(plhs[0]) = instanceID;
 	} catch (MatlabError) {
-		if (instanceID) 
+		if (instanceID)
 			gInstanceMap.erase(instanceID);
 		throw;
 	}
@@ -204,7 +204,7 @@ BK_EXPORT(bk_setunary)
 	if (gcinstance.dc)
 		mxDestroyArray(gcinstance.dc);
 
-    // Make a copy since MATLAB no longer supports incrementing reference 
+    // Make a copy since MATLAB no longer supports incrementing reference
     // count from mex extensions... I miss you mxCreateReference :(
     mxArray* dc_copy = mxDuplicateArray(dc);
     mexMakeArrayPersistent(dc_copy);
@@ -233,8 +233,8 @@ BK_EXPORT(bk_setneighbors)
 	mwIndex count = 0;
 	bool warned = false;
 	for (mwIndex c = 0; c < n; ++c) {
-		mwIndex rowStart = jc[c]; 
-		mwIndex rowEnd   = jc[c+1]; 
+		mwIndex rowStart = jc[c];
+		mwIndex rowEnd   = jc[c+1];
 		for (mwIndex ri = rowStart; ri < rowEnd; ++ri)  {
 			mwIndex r = ir[ri];
 			MATLAB_ASSERT(r != c, "A site cannot neighbor itself; make sure diagonal is all zero");

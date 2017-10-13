@@ -1,8 +1,8 @@
 function BK_SetUnary(Handle,Costs)
 % BK_SetUnary   Set the unary cost of individual variables.
-%    BK_SetUnary(Handle,Costs) accepts a 2-by-NumVars 
+%    BK_SetUnary(Handle,Costs) accepts a 2-by-NumVars
 %    int32 matrix where Costs(k,i) is the cost of assigning
-%    label k to site i. In this case, the MATLAB matrix is pointed to 
+%    label k to site i. In this case, the MATLAB matrix is pointed to
 %    by the C++ code, and so a DataCost array is not copied.
 %
 %    TODO: document behaviour for dynamic graph cuts

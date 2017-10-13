@@ -1,7 +1,7 @@
 function [DiceIndex, Precision, Recall] = evalResults(Seg,Ground)
 
 SegMask = (Seg == 1);
-GroundMask = (Ground == 1); 
+GroundMask = (Ground == 1);
 
 TP = nnz(SegMask & GroundMask);
 PS = nnz(SegMask);
