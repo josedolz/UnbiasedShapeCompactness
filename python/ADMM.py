@@ -23,13 +23,13 @@ def compactness_seg_prob_map(img, prob_map, P):
     L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
     # This is artifacts from the float approximations
 
-    priors = prob_map.flat
+    priors = prob_map.ravel()
 
     u_0 = np.zeros((N, 2))
-    u_0[:, 0] = -np.log(small_eps + (1 - priors[:]))
-    u_0[:, 1] = -np.log(small_eps + priors[:])
+    u_0[:, 0] = -np.log(small_eps + (1 - priors))
+    u_0[:, 1] = -np.log(small_eps + priors)
 
-    p = np.log(prob_map.flat[:])
+    p = np.log(prob_map.ravel())
 
     v_0 = u_0.copy()
     V = v_0.copy()
@@ -150,7 +150,7 @@ def compute_weights(img, kernel, sigma, eps):
     """
     W, H = img.shape
     N = img.size
-    X = img.flat.copy()
+    X = img.ravel()
 
     KW, KH = kernel.shape
     K = int(np.sum(kernel))  # 0 or 1
@@ -165,11 +165,11 @@ def compute_weights(img, kernel, sigma, eps):
                 continue
 
             T = A[i:i+W, j:j+H]
-            neighs[k, :] = T.flat[:]
+            neighs[k, :] = T.ravel()
             k += 1
 
     T1 = np.tile(np.arange(N), K)
-    T2 = neighs.flat.copy()
+    T2 = neighs.flatten()
     Z = T1 <= T2  # We need to reverse the test from the Matlab version
     # Matlab delete the Z, we keep them.
     T1 = T1[Z]
