@@ -10,7 +10,7 @@ The code is available only in matlab and python at the moment.
 
 If you use this code for your research, please consider citing the original paper:
 
-- Dolz J, Ben Ayed I, Desrosiers C. "[Unbiased Shape Compactness for segmentation."](https://arxiv.org/pdf/1704.08908.pdf) arXiv preprint arXiv:1704.08908 (2017)
+- Dolz J, Ben Ayed I, Desrosiers C. "[Unbiased Shape Compactness for segmentation."](https://arxiv.org/pdf/1704.08908.pdf) 755--763, in Medical Image Computing and Computer Assisted Intervention − MICCAI 2017: 20th International Conference (2017)
 
 ### Matlab
 To run it, in the matlab folder, just execute the following function:
