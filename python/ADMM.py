@@ -9,6 +9,7 @@ from energy import Energy
 
 class Params(object):
     def __init__(self):
+        self._v = False
         self._imageScale = 1
         self._noise = 8
 
@@ -122,7 +123,7 @@ def admm(y_0, N, L, V, p, eg):
         V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + params._lambda0)
         eg.set_unary(V)
         E = eg.minimize()
-        if i == 0:
+        if params._v and i == 0:
             print("E for first iteration: {}".format(E))
         y = eg.get_labeling()
 
@@ -137,7 +138,8 @@ def admm(y_0, N, L, V, p, eg):
         cost_1 = p.T.dot(y)
         if cost_1_prev == cost_1:
             res = 0
-            print(i)
+            if params._v:
+                print(i)
             break
         cost_1_prev = cost_1
 
@@ -159,7 +161,8 @@ def graph_cut(W, u_0, kernel, N):
     eg.set_neighbors(W)
     eg.set_unary(u_0)
     E = eg.minimize()
-    print(E)
+    if params._v:
+        print(E)
     y_0 = eg.get_labeling()
 
     return y_0, E, eg

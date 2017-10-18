@@ -13,6 +13,8 @@ def wrap_load(name, path):
 
 
 def load_and_config(choice):
+    params._v = True
+
     print(choice)
     if choice == "RIGHTVENT_MRI":
         img = wrap_load('mri', '../Data/mriRV.mat')
