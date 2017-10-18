@@ -7,7 +7,35 @@ import scipy.sparse.linalg
 from energy import Energy
 
 
-def compactness_seg_prob_map(img, prob_map, P):
+class Params(object):
+    def __init__(self):
+        self._imageScale = 1
+        self._noise = 8
+
+        self._kernelSize = 3
+
+        self._eps = 1e-10
+        self._mu2 = 50
+        self._mu1Fact = 1.01
+        self._mu2Fact = 1.01
+        self._solvePCG = True
+        self._maxLoops = 1000
+
+    @property
+    def _kernelSize(self):
+        return self.__kernelSize
+
+    @_kernelSize.setter
+    def _kernelSize(self, n):
+        self.__kernelSize = n
+
+        self._kernel = np.ones((n,)*2)
+        self._kernel[(n//2,)*2] = 0
+
+params = Params()
+
+
+def compactness_seg_prob_map(img, prob_map):
     """
     Wrapper function performing the graph cut and the ADMM
     :param img: The gray-scale image to segment
@@ -19,7 +47,7 @@ def compactness_seg_prob_map(img, prob_map, P):
 
     N = img.size
 
-    W = compute_weights(img, P["kernel"], P["sigma"], P["eps"])
+    W = compute_weights(img, params._kernel, params._sigma, params._eps)
     L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
     # This is artifacts from the float approximations
 
@@ -34,19 +62,19 @@ def compactness_seg_prob_map(img, prob_map, P):
     v_0 = u_0.copy()
     V = v_0.copy()
 
-    y_0, E, eg = graph_cut(W, u_0, P["kernel"], N)
+    y_0, E, eg = graph_cut(W, u_0, params._kernel, N)
     seg_0 = y_0.reshape(img.shape)
 
-    y, res = admm(P, y_0, N, L, V, p, eg)
+    y, res = admm(y_0, N, L, V, p, eg)
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(P, y_0, N, L, V, p, eg):
-    _mu1 = P["mu1"]
-    _mu2 = P["mu2"]
-    _lambda = P["lambda"]
+def admm(y_0, N, L, V, p, eg):
+    _mu1 = params._mu1
+    _mu2 = params._mu2
+    _lambda = params._lambda
     res = 0
 
     y = y_0.copy()
@@ -57,13 +85,13 @@ def admm(P, y_0, N, L, V, p, eg):
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
     cost_1_prev = 0
-    for i in range(P["maxLoops"]):
+    for i in range(params._maxLoops):
         # Update z
         alpha = (_lambda / c) * tt
 
         a = (alpha*L + _mu1 * scipy.sparse.identity(N))
         b = (_mu1 * (y + u) + _mu2 * (c + v))
-        if P["solvePCG"]:
+        if params._solvePCG:
             tmp = sci.sparse.linalg.cg(a, b)[0]
         else:
             tmp = sci.sparse.linalg.spsolve(a, b)
@@ -83,15 +111,15 @@ def admm(P, y_0, N, L, V, p, eg):
 
         if len(R) == 0:
             print("No roots found...")
-            P["lambda"] /= 10
-            return admm(P, y_0, N, L)
+            params._lambda /= 10
+            return admm(y_0, N, L)
 
         c = np.real(np.max(R))
 
         # Update y
         gamma = .5 * (_lambda / c) * rr
 
-        V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + P["lambda0"])
+        V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + params._lambda0)
         eg.set_unary(V)
         E = eg.minimize()
         if i == 0:
@@ -103,8 +131,8 @@ def admm(P, y_0, N, L, V, p, eg):
         # Update Lagrangian
         u = u + (y - z)
         v = v + (c - np.sum(z))
-        _mu1 *= P["mu1Fact"]
-        _mu2 *= P["mu2Fact"]
+        _mu1 *= params._mu1Fact
+        _mu2 *= params._mu2Fact
 
         cost_1 = p.T.dot(y)
         if cost_1_prev == cost_1:
@@ -186,12 +214,4 @@ def compute_weights(img, kernel, sigma, eps):
 
 
 if __name__ == "__main__":
-    input_ = (np.arange(16) + 1).reshape(4, 4)
-    input_[1:3, 1:3] = 17
-
-    k = np.ones((3, 3))
-    k[1, 1] = 0
-
-    output_ = compute_weights(input_, k, 100, 1e-10).toarray()
-    L = sci.sparse.spdiags(output_.sum(0), 0, 16, 16) - output_
-    print(output_)
+    print(params._kernel)

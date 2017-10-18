@@ -5,7 +5,7 @@ import scipy.io as sio
 import matplotlib.pyplot as plt
 from sys import argv
 
-from ADMM import compactness_seg_prob_map
+from ADMM import compactness_seg_prob_map, params
 
 
 def wrap_load(name, path):
@@ -13,44 +13,47 @@ def wrap_load(name, path):
 
 
 def load_and_config(choice):
-    ParamsADMM = {'imageScale': 1, "noise": 8, "dispSeg": False, "dispCost": False}
-
-    kernel_size = 3
-    ParamsADMM['kernel'] = np.ones((kernel_size, kernel_size), np.uint8)
-    ParamsADMM['kernel'][kernel_size//2, kernel_size//2] = 0
-
-    ParamsADMM.update({"eps": 1e-10, "mu2":50, "mu1Fact": 1.01, "mu2Fact": 1.01,
-                      "solvePCG": True, "maxLoops": 1000})
-
     print(choice)
     if choice == "RIGHTVENT_MRI":
         img = wrap_load('mri', '../Data/mriRV.mat')
         grd_truth = wrap_load('gt', '../Data/gtRV.mat')
         probMap = wrap_load('probMap', '../Data/probMapRV.mat')
 
-        ParamsADMM.update({"sigma": 100, "lambda": 20000, "lambda0": .5, "mu1": 5000})
+        params._sigma = 100
+        params._lambda = 20000
+        params._lambda0 = .5
+        params._mu1 = 5000
     elif choice == "AORTA_MRI":
         img = wrap_load('mri', '../Data/mriAorta.mat')
         grd_truth = wrap_load('gt', '../Data/gtMRIAorta.mat')
         probMap = wrap_load('probMap', '../Data/probMapMRIAorta.mat')
 
-        ParamsADMM.update({"sigma": 25, "lambda": 5000, "lambda0": .5, "mu1": 2000})
+        params._sigma = 25
+        params._lambda = 5000
+        params._lambda0 = .5
+        params._mu1 = 2000
     elif choice == "ESOPHAGUS_CT":
         img = wrap_load('ct', '../Data/ctEsophagus.mat')
         grd_truth = wrap_load('gt', '../Data/gtEsophagus.mat')
         probMap = wrap_load('probMap', '../Data/probMapEsophagus.mat')
 
-        ParamsADMM.update({"sigma": 1000, "lambda": 1000, "lambda0": .5, "mu1": 2000})
+        params._sigma = 1000
+        params._lambda = 1000
+        params._lambda0 = .5
+        params._mu1 = 2000
     elif choice == "AORTA_CT":
         img = wrap_load('ct', '../Data/ctAorta.mat')
         grd_truth = wrap_load('gt', '../Data/gtCTAorta.mat')
         probMap = wrap_load('probMap', '../Data/probMapCTAorta.mat')
 
-        ParamsADMM.update({"sigma": 1000, "lambda": 3000, "lambda0": .5, "mu1": 2000})
+        params._sigma = 1000
+        params._lambda = 3000
+        params._lambda0 = .5
+        params._mu1 = 2000
     else:
         raise NameError("{} is not a valid choice".format(choice))
 
-    return img, grd_truth, probMap, ParamsADMM
+    return img, grd_truth, probMap
 
 
 def eval_results(seg, ground):
@@ -86,13 +89,12 @@ if __name__ == "__main__":
     if len(argv) > 1:
         choice = argv[1]
 
-    img, grd_truth, probMap, ParamsADMM = load_and_config(choice)
+    img, grd_truth, probMap = load_and_config(choice)
 
     segCNN = probMap >= 0.5
-    ParamsADMM['GroundTruth'] = grd_truth
 
     print("Starting compactness segmentation...")
-    segADMM, segGCs, _ = compactness_seg_prob_map(img, probMap, ParamsADMM)
+    segADMM, segGCs, _ = compactness_seg_prob_map(img, probMap)
 
     diceADMM, precisionADMM, recallADMM = eval_results(segADMM, grd_truth)
     diceGCs, precisionGCs, recallGCs = eval_results(segGCs, grd_truth)
