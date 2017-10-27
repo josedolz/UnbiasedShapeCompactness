@@ -45,7 +45,7 @@ U0 = zeros(2,N);
 U0(1,:) = -log(smallEps  + (1-Priors(:)));
 U0(2,:) = -log(smallEps  +  Priors(:));
 
-p = log(probMap(:));
+p = log(smallEps+probMap(:));
 
 V0 = U0;
 V = V0;
