@@ -58,7 +58,7 @@ def compactness_seg_prob_map(img, prob_map):
     u_0[:, 0] = -np.log(small_eps + (1 - priors))
     u_0[:, 1] = -np.log(small_eps + priors)
 
-    p = np.log(prob_map.ravel())
+    p = np.log(small_eps + prob_map.ravel())
 
     v_0 = u_0.copy()
     V = v_0.copy()
