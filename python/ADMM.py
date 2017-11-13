@@ -62,9 +62,10 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     seg_0 = y_0.reshape(img.shape)
 
     # ADMM
-    p = np.log(small_eps + priors)
-    # y, res = admm(params, y_0, N, L, u_0, p, eg)
-    y, res = admm(params, priors >= .5, N, L, u_0, p, eg)
+    p = np.zeros((N, 2))
+    p[:, 0] = np.log(small_eps + 1 - prob_map.ravel())
+    p[:, 1] = np.log(small_eps + prob_map.ravel())
+    y, res = admm(params, y_0, N, L, u_0, p, eg)
 
     seg = y.reshape(img.shape)
 
@@ -81,6 +82,9 @@ def admm(params, y_0, N, L, u_0, p, eg):
     v = 0
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
+    y = np.asarray([1-y, y]).T
+    z = np.zeros(y.shape)
+
     cost_1_prev = 0
     for i in range(params._maxLoops):
         # Debug metrics:
@@ -93,20 +97,21 @@ def admm(params, y_0, N, L, u_0, p, eg):
         alpha = (_lambda / c) * tt
 
         a = (alpha*L + _mu1 * scipy.sparse.identity(N))
-        b = (_mu1 * (y + u) + _mu2 * (c + v))
+        b = (_mu1 * (y[:, 1] + u) + _mu2 * (c + v))
         if params._solvePCG:
             tmp = sp.sparse.linalg.cg(a, b)[0]
         else:
             tmp = sp.sparse.linalg.spsolve(a, b)
 
         const = (1 / _mu1) * (1 / _mu2 + N / _mu1) ** -1
-        z = tmp - const * np.sum(tmp) * o
+        z[:, 1] = tmp - const * np.sum(tmp) * o
+        z[:, 0] = 1 - z[:, 1]
 
         # Update c
-        rr = z.T.dot(L.dot(z))
+        rr = z[:, 1].T.dot(L.dot(z[:, 1]))
         beta = .5 * _lambda * tt * rr
 
-        qq = np.sum(z) - v
+        qq = np.sum(z[:, 1]) - v
 
         eq = [1, -qq, 0, -beta/_mu2]
         R = np.roots(eq)
@@ -122,29 +127,30 @@ def admm(params, y_0, N, L, u_0, p, eg):
         # Update y
         gamma = .5 * (_lambda / c) * rr
 
-        V[:, 1] = (p + _mu1 * (u - z + .5)).T / (gamma + params._lambda0)
+        V[:, 1] = (p[:, 1] + _mu1 * (u - z[:, 1] + .5)).T / (gamma + params._lambda0)
         eg.set_unary(V)
         E = eg.minimize()
         if params._v and i == 0:
             print("E for first iteration: {}".format(E))
-        y = eg.get_labeling()
+        y[:, 1] = eg.get_labeling()
+        y[:, 0] = 1 - y[:, 1]
 
-        tt = y.T.dot(L.dot(y))
+        tt = y[:, 1].T.dot(L.dot(y[:, 1]))
 
         # Update Lagrangian multipliers
-        u = u + (y - z)
-        v = v + (c - np.sum(z))
+        u = u + (y[:, 1] - z[:, 1])
+        v = v + (c - np.sum(z[:, 1]))
         _mu1 *= params._mu1Fact
         _mu2 *= params._mu2Fact
 
-        cost_1 = p.T.dot(y)
+        cost_1 = p[:, 1].T.dot(y[:, 1])
         if cost_1_prev == cost_1:
             if params._v:
                 print(i)
             break
         cost_1_prev = cost_1
 
-    return y, 0
+    return y[:, 1], 0
 
 
 def graph_cut(params, W, u_0, kernel, N):
