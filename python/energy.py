@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import scipy as sci
+import scipy as sp
 import scipy.sparse
 import maxflow
 
@@ -16,7 +16,7 @@ class Energy(object):
         self._prev_u = np.zeros((self._N, 2))
 
     def set_neighbors(self, W):
-        W = sci.sparse.triu(W.tocoo())
+        W = sp.sparse.triu(W.tocoo())
 
         for i, j, w in zip(W.row, W.col, W.data):
             self._g.add_edge(i, j, w, w)

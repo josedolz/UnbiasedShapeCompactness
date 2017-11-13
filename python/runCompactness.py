@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import scipy.io as sio
+import scipy as sp
+import scipy.io
 import matplotlib.pyplot as plt
 from sys import argv
 
@@ -9,7 +10,7 @@ from ADMM import compactness_seg_prob_map, params
 
 
 def wrap_load(name, path):
-    return sio.loadmat(path)[name]
+    return sp.io.loadmat(path)[name]
 
 
 def load_and_config(choice):

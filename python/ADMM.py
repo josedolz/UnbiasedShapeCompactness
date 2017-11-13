@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import scipy as sci
+import scipy as sp
 import scipy.sparse
 import scipy.sparse.linalg
 from energy import Energy
@@ -49,7 +49,7 @@ def compactness_seg_prob_map(img, prob_map):
     N = img.size
 
     W = compute_weights(img, params._kernel, params._sigma, params._eps)
-    L = sci.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
+    L = sp.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
     # This is artifacts from the float approximations
 
     priors = prob_map.ravel()
@@ -93,9 +93,9 @@ def admm(y_0, N, L, V, p, eg):
         a = (alpha*L + _mu1 * scipy.sparse.identity(N))
         b = (_mu1 * (y + u) + _mu2 * (c + v))
         if params._solvePCG:
-            tmp = sci.sparse.linalg.cg(a, b)[0]
+            tmp = sp.sparse.linalg.cg(a, b)[0]
         else:
-            tmp = sci.sparse.linalg.spsolve(a, b)
+            tmp = sp.sparse.linalg.spsolve(a, b)
 
         const = (1 / _mu1) * (1 / _mu2 + N / _mu1) ** -1
         z = tmp - const * np.sum(tmp) * o
@@ -211,7 +211,7 @@ def compute_weights(img, kernel, sigma, eps):
     1 for the identical values, 0 for completely different ones
     '''
     diff = (1 - eps) * np.exp(-sigma * (X[T1] - X[T2])**2) + eps
-    M = sci.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
+    M = sp.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
 
     return M + M.T
 
