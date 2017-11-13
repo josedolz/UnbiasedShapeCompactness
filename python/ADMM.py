@@ -33,6 +33,7 @@ class Params(object):
         self._kernel = np.ones((n,)*2)
         self._kernel[(n//2,)*2] = 0
 
+
 params = Params()
 
 
@@ -47,41 +48,35 @@ def compactness_seg_prob_map(img, prob_map):
     small_eps = 1e-6
 
     N = img.size
-
     W = compute_weights(img, params._kernel, params._sigma, params._eps)
-    L = sp.sparse.spdiags(W.sum(0), 0, N, N) - W  # Tiny difference on average compared to the Matlab version
-    # This is artifacts from the float approximations
+    L = sp.sparse.spdiags(W.sum(0), 0, N, N) - W
 
+    # Initial Graph Cut
     priors = prob_map.ravel()
 
     u_0 = np.zeros((N, 2))
     u_0[:, 0] = -np.log(small_eps + (1 - priors))
     u_0[:, 1] = -np.log(small_eps + priors)
 
-    p = np.log(small_eps + prob_map.ravel())
-
-    v_0 = u_0.copy()
-    V = v_0.copy()
-
     y_0, E, eg = graph_cut(W, u_0, params._kernel, N)
     seg_0 = y_0.reshape(img.shape)
 
-    y, res = admm(y_0, N, L, V, p, eg)
+    # ADMM
+    p = np.log(small_eps + prob_map.ravel())
+    y, res = admm(y_0, N, L, u_0, p, eg)
+
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(y_0, N, L, V, p, eg):
+def admm(y_0, N, L, u_0, p, eg):
     _mu1 = params._mu1
     _mu2 = params._mu2
     _lambda = params._lambda
-    res = 0
 
-    y = y_0.copy()
-    c = np.sum(y)
-    o = np.ones(N)
-    u = np.zeros(N)
+    y, V = y_0.copy(), u_0.copy()
+    c, o, u = np.sum(y), np.ones(N), np.zeros(N)
     v = 0
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
@@ -113,7 +108,7 @@ def admm(y_0, N, L, V, p, eg):
         if len(R) == 0:
             print("No roots found...")
             params._lambda /= 10
-            return admm(y_0, N, L)
+            return admm(y_0, N, L, u_0, p, eg)
 
         c = np.real(np.max(R))
 
@@ -129,7 +124,7 @@ def admm(y_0, N, L, V, p, eg):
 
         tt = y.T.dot(L.dot(y))
 
-        # Update Lagrangian
+        # Update Lagrangian multipliers
         u = u + (y - z)
         v = v + (c - np.sum(z))
         _mu1 *= params._mu1Fact
@@ -137,13 +132,12 @@ def admm(y_0, N, L, V, p, eg):
 
         cost_1 = p.T.dot(y)
         if cost_1_prev == cost_1:
-            res = 0
             if params._v:
                 print(i)
             break
         cost_1_prev = cost_1
 
-    return y, res
+    return y, 0
 
 
 def graph_cut(W, u_0, kernel, N):
