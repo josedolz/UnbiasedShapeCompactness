@@ -78,7 +78,8 @@ def admm(params, y_0, N, L, u_0, p, eg):
     _lambda = params._lambda
 
     y, V = y_0.copy(), u_0.copy()
-    c, o, u = np.sum(y), np.ones(N), np.zeros(N)
+    c, o = np.sum(y), np.ones(N)
+    u = np.zeros((N, 2))
     v = 0
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
@@ -97,7 +98,7 @@ def admm(params, y_0, N, L, u_0, p, eg):
         alpha = (_lambda / c) * tt
 
         a = (alpha*L + _mu1 * scipy.sparse.identity(N))
-        b = (_mu1 * (y[:, 1] + u) + _mu2 * (c + v))
+        b = (_mu1 * (y[:, 1] + u[:, 1]) + _mu2 * (c + v))
         if params._solvePCG:
             tmp = sp.sparse.linalg.cg(a, b)[0]
         else:
@@ -127,7 +128,10 @@ def admm(params, y_0, N, L, u_0, p, eg):
         # Update y
         gamma = .5 * (_lambda / c) * rr
 
-        V[:, 1] = (p[:, 1] + _mu1 * (u - z[:, 1] + .5)).T / (gamma + params._lambda0)
+        q = z - u
+        a = p + params._mu1*(.5 + q)
+
+        V[:, 1] = (p[:, 1] + _mu1 * (u[:, 1] - z[:, 1] + .5)).T / (gamma + params._lambda0)
         eg.set_unary(V)
         E = eg.minimize()
         if params._v and i == 0:
@@ -138,7 +142,8 @@ def admm(params, y_0, N, L, u_0, p, eg):
         tt = y[:, 1].T.dot(L.dot(y[:, 1]))
 
         # Update Lagrangian multipliers
-        u = u + (y[:, 1] - z[:, 1])
+        # u = u + (y[:, 1] - z[:, 1])
+        u = u + (y - z)
         v = v + (c - np.sum(z[:, 1]))
         _mu1 *= params._mu1Fact
         _mu2 *= params._mu2Fact
