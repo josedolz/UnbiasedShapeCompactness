@@ -82,6 +82,12 @@ def admm(y_0, N, L, u_0, p, eg):
 
     cost_1_prev = 0
     for i in range(params._maxLoops):
+        # Debug metrics:
+        if params._v:
+            length = y.T.dot(L.dot(y))
+            area = y.sum()
+            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, length, area))
+
         # Update z
         alpha = (_lambda / c) * tt
 

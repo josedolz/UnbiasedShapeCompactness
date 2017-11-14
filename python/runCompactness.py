@@ -88,7 +88,7 @@ def draw_results(img, grd_truth, segCNN, segGCs, segADMM):
 
 
 if __name__ == "__main__":
-    choice = "AORTA_CT"
+    choice = "RIGHTVENT_MRI"
     if len(argv) > 1:
         choice = argv[1]
 
