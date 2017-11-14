@@ -65,14 +65,14 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     p = np.zeros((N, 2))
     p[:, 0] = np.log(small_eps + 1 - prob_map.ravel())
     p[:, 1] = np.log(small_eps + prob_map.ravel())
-    y, res = admm(params, y_0, N, L, u_0, p, eg)
+    y, res = admm(params, y_0, N, L, u_0, p, eg, W)
 
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(params, y_0, N, L, u_0, p, eg):
+def admm(params, y_0, N, L, u_0, p, eg, W):
     _mu1 = params._mu1
     _mu2 = params._mu2
     _lambda = params._lambda
@@ -86,12 +86,16 @@ def admm(params, y_0, N, L, u_0, p, eg):
     y = np.asarray([1-y, y]).T
     z = np.zeros(y.shape)
 
+    δ = np.ones((2, 2)) - np.diag((1,) * 2)
+    Φ = sp.sparse.kron(W, δ)
+
     cost_1_prev = 0
     for i in range(params._maxLoops):
         # Debug metrics:
         if params._v:
-            length = y.T.dot(L.dot(y))
-            area = y.sum()
+            seg = np.argmax(y, axis=1)
+            length = seg.T.dot(L.dot(seg))
+            area = seg.sum()
             print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, length, area))
 
         # Update z
@@ -130,6 +134,7 @@ def admm(params, y_0, N, L, u_0, p, eg):
 
         q = z - u
         a = p + params._mu1*(.5 + q)
+        a = a + 2 * _lambda * Φ.dot(y.ravel()).reshape(y.shape)
 
         V[:, 1] = (p[:, 1] + _mu1 * (u[:, 1] - z[:, 1] + .5)).T / (gamma + params._lambda0)
         eg.set_unary(V)
