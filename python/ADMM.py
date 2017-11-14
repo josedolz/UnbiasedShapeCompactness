@@ -114,7 +114,9 @@ def admm(params, y_0, N, L, u_0, p, W):
         z[:, 0] = 1 - z[:, 1]
 
         # Update c
-        rr = z[:, 1].T.dot(L.dot(z[:, 1]))
+        # rr = z[:,1].T.dot(L.dot(z[:, 1]))
+        Z = np.argmax(z, axis=1)
+        rr = Z.T.dot(L.dot(Z))
         beta = .5 * _lambda * tt * rr
 
         qq = np.sum(z[:, 1]) - v
@@ -134,8 +136,8 @@ def admm(params, y_0, N, L, u_0, p, W):
         gamma = .5 * (_lambda / c) * rr
 
         q = z - u
-        a = p + params._mu1*(.5 + q)
-        a = a + 2 * _lambda * Φ.dot(y.ravel()).reshape(y.shape)
+        a = p + params._mu1*(.5 - q)
+        a = a + 2 * (gamma + .5) * Φ.dot(y.ravel()).reshape(y.shape)
 
         y = y * np.exp(-a / β)
         y = y / np.repeat(y.sum(1), 2).reshape(y.shape)

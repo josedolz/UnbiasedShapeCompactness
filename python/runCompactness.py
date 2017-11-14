@@ -53,11 +53,11 @@ def load_and_config(choice):
         probMap = wrap_load('probMap', '../Data/probMapCTAorta.mat')
 
         params._sigma = 1000
-        # params._lambda = 3000
-        params._lambda = 500
+        params._lambda = 3000
+        # params._lambda = 500
         params._lambda0 = .5
-        # params._mu1 = 2000
-        params._mu1 = 10
+        params._mu1 = 2000
+        # params._mu1 = 10
     else:
         raise NameError("{} is not a valid choice".format(choice))
 
