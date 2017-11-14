@@ -58,21 +58,21 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u_0[:, 0] = -np.log(small_eps + (1 - priors))
     u_0[:, 1] = -np.log(small_eps + priors)
 
-    y_0, E, eg = graph_cut(params, W, u_0, params._kernel, N)
+    y_0, E, _ = graph_cut(params, W, u_0, params._kernel, N)
     seg_0 = y_0.reshape(img.shape)
 
     # ADMM
     p = np.zeros((N, 2))
     p[:, 0] = np.log(small_eps + 1 - prob_map.ravel())
     p[:, 1] = np.log(small_eps + prob_map.ravel())
-    y, res = admm(params, y_0, N, L, u_0, p, eg, W)
+    y, res = admm(params, priors, N, L, u_0, p, W)
 
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(params, y_0, N, L, u_0, p, eg, W):
+def admm(params, y_0, N, L, u_0, p, W):
     _mu1 = params._mu1
     _mu2 = params._mu2
     _lambda = params._lambda
@@ -88,6 +88,7 @@ def admm(params, y_0, N, L, u_0, p, eg, W):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
+    β = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
 
     cost_1_prev = 0
     for i in range(params._maxLoops):
@@ -136,18 +137,15 @@ def admm(params, y_0, N, L, u_0, p, eg, W):
         a = p + params._mu1*(.5 + q)
         a = a + 2 * _lambda * Φ.dot(y.ravel()).reshape(y.shape)
 
-        V[:, 1] = (p[:, 1] + _mu1 * (u[:, 1] - z[:, 1] + .5)).T / (gamma + params._lambda0)
-        eg.set_unary(V)
-        E = eg.minimize()
-        if params._v and i == 0:
-            print("E for first iteration: {}".format(E))
-        y[:, 1] = eg.get_labeling()
-        y[:, 0] = 1 - y[:, 1]
+        y = y * np.exp(-a / β)
+        y = y / np.repeat(y.sum(1), 2).reshape(y.shape)
+        assert(np.allclose(y.sum(1), 1))
+        assert(0 <= y.min())
+        assert(y.max() <= 1)
 
         tt = y[:, 1].T.dot(L.dot(y[:, 1]))
 
         # Update Lagrangian multipliers
-        # u = u + (y[:, 1] - z[:, 1])
         u = u + (y - z)
         v = v + (c - np.sum(z[:, 1]))
         _mu1 *= params._mu1Fact
@@ -160,7 +158,7 @@ def admm(params, y_0, N, L, u_0, p, eg, W):
             break
         cost_1_prev = cost_1
 
-    return y[:, 1], 0
+    return y[:, 1] >= .5, 0
 
 
 def graph_cut(params, W, u_0, kernel, N):
