@@ -65,22 +65,21 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u = np.zeros((N, 2))
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
-    y, res = admm(params, priors, N, L, unary_0, u, W)
+    y, res = admm(params, priors, N, L, u, W)
 
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(params, y_0, N, L, unary_0, u, W):
+def admm(params, y_0, N, L, u, W):
     μ1 = params._mu1
     μ2 = params._mu2
     λ = params._lambda
 
-    y, unary = y_0.copy(), unary_0.copy()
+    y = y_0.copy()
     s = np.sum(y)
-    ν1 = np.zeros((N, 2))
-    ν2 = 0
+    ν1, ν2 = np.zeros((N, 2)), 0
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
     y = np.asarray([1-y, y]).T
@@ -128,7 +127,7 @@ def admm(params, y_0, N, L, unary_0, u, W):
         if len(R) == 0:
             print("No roots found...")
             params._lambda /= 10
-            return admm(y_0, N, L, unary_0, u, eg)
+            return admm(y_0, N, L, u, W)
 
         s = np.real(np.max(R))
 
