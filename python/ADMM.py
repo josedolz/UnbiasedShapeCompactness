@@ -45,7 +45,7 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     if params is None:
         params = Params()
 
-    small_eps = 1e-6
+    ε = 1e-6
 
     N = img.size
     W = compute_weights(img, params._kernel, params._sigma, params._eps)
@@ -54,33 +54,33 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     # Initial Graph Cut
     priors = prob_map.ravel()
 
-    u_0 = np.zeros((N, 2))
-    u_0[:, 0] = -np.log(small_eps + (1 - priors))
-    u_0[:, 1] = -np.log(small_eps + priors)
+    unary_0 = np.zeros((N, 2))
+    unary_0[:, 0] = -np.log(ε + (1 - priors))
+    unary_0[:, 1] = -np.log(ε + priors)
 
-    y_0, E, _ = graph_cut(params, W, u_0, params._kernel, N)
+    y_0, E, _ = graph_cut(params, W, unary_0, params._kernel, N)
     seg_0 = y_0.reshape(img.shape)
 
     # ADMM
-    p = np.zeros((N, 2))
-    p[:, 0] = np.log(small_eps + 1 - prob_map.ravel())
-    p[:, 1] = np.log(small_eps + prob_map.ravel())
-    y, res = admm(params, priors, N, L, u_0, p, W)
+    u = np.zeros((N, 2))
+    u[:, 0] = np.log(ε + 1 - prob_map.ravel())
+    u[:, 1] = np.log(ε + prob_map.ravel())
+    y, res = admm(params, priors, N, L, unary_0, u, W)
 
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(params, y_0, N, L, u_0, p, W):
-    _mu1 = params._mu1
-    _mu2 = params._mu2
-    _lambda = params._lambda
+def admm(params, y_0, N, L, unary_0, u, W):
+    μ1 = params._mu1
+    μ2 = params._mu2
+    λ = params._lambda
 
-    y, V = y_0.copy(), u_0.copy()
-    c, o = np.sum(y), np.ones(N)
-    u = np.zeros((N, 2))
-    v = 0
+    y, unary = y_0.copy(), unary_0.copy()
+    s = np.sum(y)
+    ν1 = np.zeros((N, 2))
+    ν2 = 0
     tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
 
     y = np.asarray([1-y, y]).T
@@ -88,7 +88,7 @@ def admm(params, y_0, N, L, u_0, p, W):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
-    β = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
+    Β = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
 
     cost_1_prev = 0
     for i in range(params._maxLoops):
@@ -100,60 +100,59 @@ def admm(params, y_0, N, L, u_0, p, W):
             print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, length, area))
 
         # Update z
-        alpha = (_lambda / c) * tt
+        α = (λ / s) * tt
 
-        a = (alpha*L + _mu1 * scipy.sparse.identity(N))
-        b = (_mu1 * (y[:, 1] + u[:, 1]) + _mu2 * (c + v))
+        a = (α*L + μ1 * scipy.sparse.identity(N))
+        b = (μ1 * (y[:, 1] + ν1[:, 1]) + μ2 * (s + ν2))
         if params._solvePCG:
             tmp = sp.sparse.linalg.cg(a, b)[0]
         else:
             tmp = sp.sparse.linalg.spsolve(a, b)
 
-        const = (1 / _mu1) * (1 / _mu2 + N / _mu1) ** -1
-        z[:, 1] = tmp - const * np.sum(tmp) * o
+        const = (1 / μ1) * (1 / μ2 + N / μ1) ** -1
+        z[:, 1] = tmp - const * np.sum(tmp) * np.ones(N)
         z[:, 0] = 1 - z[:, 1]
 
         # Update c
         # rr = z[:,1].T.dot(L.dot(z[:, 1]))
         Z = np.argmax(z, axis=1)
         rr = Z.T.dot(L.dot(Z))
-        beta = .5 * _lambda * tt * rr
+        β = .5 * λ * tt * rr
 
-        qq = np.sum(z[:, 1]) - v
+        qq = np.sum(z[:, 1]) - ν2
 
-        eq = [1, -qq, 0, -beta/_mu2]
+        eq = [1, -qq, 0, -β/μ2]
         R = np.roots(eq)
         R = R[np.isreal(R)]
 
         if len(R) == 0:
             print("No roots found...")
             params._lambda /= 10
-            return admm(y_0, N, L, u_0, p, eg)
+            return admm(y_0, N, L, unary_0, u, eg)
 
-        c = np.real(np.max(R))
+        s = np.real(np.max(R))
 
         # Update y
-        gamma = .5 * (_lambda / c) * rr
+        γ = .5 * (λ / s) * rr
 
-        q = z - u
-        a = p + params._mu1*(.5 - q)
-        a = a + 2 * (gamma + .5) * Φ.dot(y.ravel()).reshape(y.shape)
+        q = z - ν1
+        a = u + params._mu1 * (.5 - q)
+        a = a + 2 * (γ + .5) * Φ.dot(y.ravel()).reshape(y.shape)
 
-        y = y * np.exp(-a / β)
+        y = y * np.exp(-a/Β)
         y = y / np.repeat(y.sum(1), 2).reshape(y.shape)
         assert(np.allclose(y.sum(1), 1))
-        assert(0 <= y.min())
-        assert(y.max() <= 1)
+        assert(0 <= y.min() and y.max() <= 1)
 
         tt = y[:, 1].T.dot(L.dot(y[:, 1]))
 
         # Update Lagrangian multipliers
-        u = u + (y - z)
-        v = v + (c - np.sum(z[:, 1]))
-        _mu1 *= params._mu1Fact
-        _mu2 *= params._mu2Fact
+        ν1 = ν1 + (y - z)
+        ν2 = ν2 + (s - np.sum(z[:, 1]))
+        μ1 *= params._mu1Fact
+        μ2 *= params._mu2Fact
 
-        cost_1 = p[:, 1].T.dot(y[:, 1])
+        cost_1 = u[:, 1].T.dot(y[:, 1])
         if cost_1_prev == cost_1:
             if params._v:
                 print(i)
@@ -163,20 +162,20 @@ def admm(params, y_0, N, L, u_0, p, W):
     return y[:, 1] >= .5, 0
 
 
-def graph_cut(params, W, u_0, kernel, N):
+def graph_cut(params, W, unary_0, kernel, N):
     """
-    Perform the graph cut for the initial segmentation.
+    Perform the initial graph cut for the initial segmentation.
     The current implementation is not fully functional, but the results for RIGHTVENT_MRI
     are usable to develop the rest of the algorithm.
     :param W: The weights matrices computed previously
-    :param u_0: The unary weights for the graphcut: based on prob_map
+    :param unary_0: The unary weights for the graphcut: based on prob_map
     :param kernel: The kernel used
     :param N: size of the image
     :return: The segmentation as a vector, the Energy
     """
     eg = Energy(N, np.count_nonzero(kernel)*N)
     eg.set_neighbors(W)
-    eg.set_unary(u_0)
+    eg.set_unary(unary_0)
     E = eg.minimize()
     if params._v:
         print(E)
@@ -185,15 +184,15 @@ def graph_cut(params, W, u_0, kernel, N):
     return y_0, E, eg
 
 
-def compute_weights(img, kernel, sigma, eps):
+def compute_weights(img, kernel, σ, ε):
     """
     This function compute the weights of the graph representing img.
     The weights 0 <= w_i <= 1 will be determined from the difference between the nodes: 1 for identical value,
     0 for completely different.
     :param img: The image, as a (n,n) matrix.
     :param kernel: A binary mask of (k,k) shape.
-    :param sigma: Parameter for the weird exponential at the end.
-    :param eps: Other parameter for the weird exponential at the end.
+    :param σ: Parameter for the weird exponential at the end.
+    :param ε: Other parameter for the weird exponential at the end.
     :return: A float valued (n^2,n^2) symmetric matrix. Diagonal is empty
     """
     W, H = img.shape
@@ -227,7 +226,7 @@ def compute_weights(img, kernel, sigma, eps):
     This represent the difference between the nodes
     1 for the identical values, 0 for completely different ones
     '''
-    diff = (1 - eps) * np.exp(-sigma * (X[T1] - X[T2])**2) + eps
+    diff = (1 - ε) * np.exp(-σ * (X[T1] - X[T2]) ** 2) + ε
     M = sp.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
 
     return M + M.T
