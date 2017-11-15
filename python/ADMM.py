@@ -20,6 +20,7 @@ class Params(object):
         self._mu1Fact = 1.01
         self._mu2Fact = 1.01
         self._solvePCG = True
+        self._GC = True
         self._maxLoops = 1000
 
     @property
@@ -58,14 +59,14 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     unary_0[:, 0] = -np.log(ε + (1 - priors))
     unary_0[:, 1] = -np.log(ε + priors)
 
-    y_0, E, _ = graph_cut(params, W, unary_0, params._kernel, N)
+    y_0, E, eg = graph_cut(params, W, unary_0, params._kernel, N)
     seg_gc = y_0.reshape(img.shape)
 
     # ADMM
     u = np.zeros((N, 2))
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
-    y, res = admm(params, priors, N, L, unary_0, u, W)
+    y, res = admm(params, priors, N, L, unary_0, u, W, eg)
 
     final_seg = y.reshape(img.shape)
 
@@ -78,7 +79,7 @@ def length(label, L):
     return seg.T.dot(L.dot(seg))
 
 
-def admm(params, y_0, N, L, unary_0, u, W):
+def admm(params, y_0, N, L, unary_0, u, W, eg):
     μ1 = params._mu1
     μ2 = params._mu2
     λ = params._lambda
@@ -107,7 +108,7 @@ def admm(params, y_0, N, L, unary_0, u, W):
         # Update z
         α = (λ / s) * tt
 
-        a = (α*L + μ1 * scipy.sparse.identity(N))
+        a = (α*L + μ1 * sp.sparse.identity(N))
         b = (μ1 * (y[:, 1] + ν1[:, 1]) + μ2 * (s + ν2))
         if params._solvePCG:
             tmp = sp.sparse.linalg.cg(a, b)[0]
@@ -137,15 +138,23 @@ def admm(params, y_0, N, L, unary_0, u, W):
 
         # Update y
         γ = .5 * (λ / s) * rr
-
         q = z - ν1
-        a = u + params._mu1 * (.5 - q)
-        a = a + 2 * (γ + .5) * Φ.dot(y.ravel()).reshape(y.shape)
+        f = u + μ1 * (.5 - q)
+        denom = (γ + params._lambda0)
+        if params._GC:
+            unary[:, 1] = f[:, 1].T / denom
+            eg.set_unary(unary)
+            _ = eg.minimize()
+            y[:, 1] = eg.get_labeling()
+            y[:, 0] = 1 - y[:, 1]
+        else:
+            a = f
+            a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
 
-        y = y * np.exp(-a/Β)
-        y = y / np.repeat(y.sum(1), 2).reshape(y.shape)
-        assert(np.allclose(y.sum(1), 1))
-        assert(0 <= y.min() and y.max() <= 1)
+            y = y * np.exp(-a/Β)
+            y = y / np.repeat(y.sum(1), 2).reshape(y.shape)
+            assert(np.allclose(y.sum(1), 1))
+            assert(0 <= y.min() and y.max() <= 1)
 
         tt = length(y, L)
 

@@ -24,11 +24,11 @@ def load_and_config(choice):
         probMap = wrap_load('probMap', '../Data/probMapRV.mat')
 
         params._sigma = 100
-        # params._lambda = 20000
-        params._lambda = 200
+        params._lambda = 20000
+        # params._lambda = 200
         params._lambda0 = .5
-        # params._mu1 = 5000
-        params._mu1 = 50
+        params._mu1 = 5000
+        # params._mu1 = 50
     elif choice == "AORTA_MRI":
         img = wrap_load('mri', '../Data/mriAorta.mat')
         grd_truth = wrap_load('gt', '../Data/gtMRIAorta.mat')
@@ -98,6 +98,11 @@ if __name__ == "__main__":
         choice = argv[1]
 
     img, grd_truth, probMap, params = load_and_config(choice)
+
+    params._GC = False
+    if not params._GC:
+        params._lambda /= 100
+        params._mu1 /= 100
 
     segCNN = probMap >= 0.5
 
