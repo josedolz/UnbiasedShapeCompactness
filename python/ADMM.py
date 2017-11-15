@@ -59,7 +59,7 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     unary_0[:, 1] = -np.log(ε + priors)
 
     y_0, E, _ = graph_cut(params, W, unary_0, params._kernel, N)
-    seg_0 = y_0.reshape(img.shape)
+    seg_gc = y_0.reshape(img.shape)
 
     # ADMM
     u = np.zeros((N, 2))
@@ -67,9 +67,15 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u[:, 1] = np.log(ε + prob_map.ravel())
     y, res = admm(params, priors, N, L, u, W)
 
-    seg = y.reshape(img.shape)
+    final_seg = y.reshape(img.shape)
 
-    return seg, seg_0, res
+    return final_seg, seg_gc, res
+
+
+# Careful with the order, since L is sparse. np.dot is unaware of that fact.
+def length(label, L):
+    seg = np.argmax(label, axis=1)
+    return seg.T.dot(L.dot(seg))
 
 
 def admm(params, y_0, N, L, u, W):
@@ -77,13 +83,12 @@ def admm(params, y_0, N, L, u, W):
     μ2 = params._mu2
     λ = params._lambda
 
-    y = y_0.copy()
-    s = np.sum(y)
-    ν1, ν2 = np.zeros((N, 2)), 0
-    tt = y.T.dot(L.dot(y))  # Careful with the order, since L is sparse. np.dot is unaware of that fact.
-
-    y = np.asarray([1-y, y]).T
+    y = np.asarray([1-y_0, y_0]).T
     z = np.zeros(y.shape)
+
+    s = np.sum(y[:, 1])
+    ν1, ν2 = np.zeros((N, 2)), 0
+    tt = length(y, L)
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
@@ -93,10 +98,10 @@ def admm(params, y_0, N, L, u, W):
     for i in range(params._maxLoops):
         # Debug metrics:
         if params._v:
+            l = length(y, L)
             seg = np.argmax(y, axis=1)
-            length = seg.T.dot(L.dot(seg))
             area = seg.sum()
-            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, length, area))
+            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, l, area))
 
         # Update z
         α = (λ / s) * tt
@@ -113,9 +118,7 @@ def admm(params, y_0, N, L, u, W):
         z[:, 0] = 1 - z[:, 1]
 
         # Update c
-        # rr = z[:,1].T.dot(L.dot(z[:, 1]))
-        Z = np.argmax(z, axis=1)
-        rr = Z.T.dot(L.dot(Z))
+        rr = length(z, L)
         β = .5 * λ * tt * rr
 
         qq = np.sum(z[:, 1]) - ν2
@@ -143,7 +146,7 @@ def admm(params, y_0, N, L, u, W):
         assert(np.allclose(y.sum(1), 1))
         assert(0 <= y.min() and y.max() <= 1)
 
-        tt = y[:, 1].T.dot(L.dot(y[:, 1]))
+        tt = length(y, L)
 
         # Update Lagrangian multipliers
         ν1 = ν1 + (y - z)
@@ -158,7 +161,7 @@ def admm(params, y_0, N, L, u, W):
             break
         cost_1_prev = cost_1
 
-    return y[:, 1] >= .5, 0
+    return np.argmax(y, axis=1), 0
 
 
 def graph_cut(params, W, unary_0, kernel, N):
