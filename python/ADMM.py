@@ -62,7 +62,7 @@ def compactness_seg_prob_map(img, prob_map):
     seg_0 = y_0.reshape(img.shape)
 
     # ADMM
-    p = np.log(small_eps + prob_map.ravel())
+    p = np.log(small_eps + priors)
     y, res = admm(y_0, N, L, u_0, p, eg)
 
     seg = y.reshape(img.shape)
