@@ -22,6 +22,7 @@ class Params(object):
         self._solvePCG = True
         self._GC = True
         self._maxLoops = 1000
+        self._crf_loops = 1000
 
     @property
     def _kernelSize(self):
@@ -148,13 +149,20 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
             y[:, 1] = eg.get_labeling()
             y[:, 0] = 1 - y[:, 1]
         else:
-            a = f
-            a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
+            for j in range(params._crf_loops):
+                a = f
+                a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
 
-            y = y * np.exp(-a/Β)
-            y = y / np.repeat(y.sum(1), 2).reshape(y.shape)
-            assert(np.allclose(y.sum(1), 1))
-            assert(0 <= y.min() and y.max() <= 1)
+                y2 = y * np.exp(-a/Β)
+                y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
+                assert(np.allclose(y2.sum(1), 1))
+                assert(0 <= y2.min() and y2.max() <= 1)
+
+                if np.allclose(y2, y):
+                    break
+
+                y = y2
+            print("Crf completed in {:3d} iterations".format(j))
 
         tt = length(y, L)
 

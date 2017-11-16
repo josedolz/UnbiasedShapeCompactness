@@ -25,10 +25,8 @@ def load_and_config(choice):
 
         params._sigma = 100
         params._lambda = 20000
-        # params._lambda = 200
         params._lambda0 = .5
         params._mu1 = 5000
-        # params._mu1 = 50
     elif choice == "AORTA_MRI":
         img = wrap_load('mri', '../Data/mriAorta.mat')
         grd_truth = wrap_load('gt', '../Data/gtMRIAorta.mat')
@@ -54,10 +52,8 @@ def load_and_config(choice):
 
         params._sigma = 1000
         params._lambda = 3000
-        # params._lambda = 500
         params._lambda0 = .5
         params._mu1 = 2000
-        # params._mu1 = 10
     else:
         raise NameError("{} is not a valid choice".format(choice))
 
@@ -99,7 +95,7 @@ if __name__ == "__main__":
 
     img, grd_truth, probMap, params = load_and_config(choice)
 
-    params._GC = False
+    params._GC = True
     if not params._GC:
         params._lambda /= 100
         params._mu1 /= 100
