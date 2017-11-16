@@ -68,6 +68,7 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
     y, res = admm(params, priors, N, L, unary_0, u, W, eg)
+    # y, res = admm(params, y_0, N, L, unary_0, u, W, eg)
 
     final_seg = y.reshape(img.shape)
 
@@ -75,12 +76,12 @@ def compactness_seg_prob_map(img, prob_map, params=None):
 
 
 # Careful with the order, since L is sparse. np.dot is unaware of that fact.
-def length(label, L):
-    seg = np.argmax(label, axis=1)
-    return seg.T.dot(L.dot(seg))
+length = lambda label, L: label[:, 1].T.dot(L.dot(label[:, 1]))
 
 
 def admm(params, y_0, N, L, unary_0, u, W, eg):
+    if params._GC:
+        y_0 = y_0 >= .5
     μ1 = params._mu1
     μ2 = params._mu2
     λ = params._lambda
