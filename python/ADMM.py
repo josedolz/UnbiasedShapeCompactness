@@ -6,6 +6,8 @@ import scipy.sparse
 import scipy.sparse.linalg
 from energy import Energy
 
+import matplotlib.pyplot as plt
+
 
 class Params(object):
     def __init__(self):
@@ -67,8 +69,8 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u = np.zeros((N, 2))
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
-    y, res = admm(params, priors, N, L, unary_0, u, W, eg)
-    # y, res = admm(params, y_0, N, L, unary_0, u, W, eg)
+    y, res = admm(params, priors, N, L, unary_0, u, W, eg, img)
+    # y, res = admm(params, y_0, N, L, unary_0, u, W, eg, img)
 
     final_seg = y.reshape(img.shape)
 
@@ -84,7 +86,7 @@ def b_length(label, L):
     return seg.T.dot(L.dot(seg))
 
 
-def admm(params, y_0, N, L, unary_0, u, W, eg):
+def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     if params._GC:
         y_0 = y_0 >= .5
     μ1 = params._mu1
@@ -101,16 +103,22 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
-    Β = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
+    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
 
     cost_1_prev = 0
     for i in range(params._maxLoops):
+        if params._v and i < 10 and False:
+            seg = np.argmax(y, axis=1)
+            plt.imshow(seg.reshape(img.shape))
+            plt.show()
+
         # Debug metrics:
         if params._v:
             l = b_length(y, L)
             seg = np.argmax(y, axis=1)
             area = seg.sum()
-            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, l, area))
+            compactness = l**2 / area
+            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}".format(i, l, area, compactness))
 
         # Update z
         α = (λ / s) * tt
@@ -147,7 +155,8 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
         γ = .5 * (λ / s) * rr
         q = z - ν1
         f = u + μ1 * (.5 - q)
-        denom = (γ + params._lambda0)
+        # denom = (γ + params._lambda0)
+        denom = γ
         if params._GC:
             unary[:, 1] = f[:, 1].T / denom
             eg.set_unary(unary)
@@ -160,7 +169,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
                 a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
 
                 exp = np.exp(-a /B)
-                y2 = y * np.exp(-a/Β)
+                y2 = y * exp
                 y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
                 assert(np.allclose(y2.sum(1), 1))
                 assert(0 <= y2.min() and y2.max() <= 1)
@@ -255,6 +264,7 @@ def compute_weights(img, kernel, σ, ε):
     1 for the identical values, 0 for completely different ones
     '''
     diff = (1 - ε) * np.exp(-σ * (X[T1] - X[T2]) ** 2) + ε
+    # diff = np.ones(len(T1))
     M = sp.sparse.csc_matrix((diff, (T1, T2)), shape=(N, N))
 
     return M + M.T
