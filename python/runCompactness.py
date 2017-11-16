@@ -95,10 +95,12 @@ if __name__ == "__main__":
 
     img, grd_truth, probMap, params = load_and_config(choice)
 
-    params._GC = True
-    if not params._GC:
-        params._lambda /= 100
-        params._mu1 /= 100
+    params._GC = False
+    # if not params._GC:
+    # params._lambda /= 100
+    # params._mu1 /= 100
+    params._lambda = 200
+    params._mu1 = 4
 
     segCNN = probMap >= 0.5
 

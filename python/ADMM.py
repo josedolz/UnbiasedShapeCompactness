@@ -76,7 +76,12 @@ def compactness_seg_prob_map(img, prob_map, params=None):
 
 
 # Careful with the order, since L is sparse. np.dot is unaware of that fact.
-length = lambda label, L: label[:, 1].T.dot(L.dot(label[:, 1]))
+c_length = lambda label, L: label[:, 1].T.dot(L.dot(label[:, 1]))
+
+
+def b_length(label, L):
+    seg = np.argmax(label, axis=1)
+    return seg.T.dot(L.dot(seg))
 
 
 def admm(params, y_0, N, L, unary_0, u, W, eg):
@@ -92,7 +97,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
 
     s = np.sum(y[:, 1])
     ν1, ν2 = np.zeros((N, 2)), 0
-    tt = length(y, L)
+    tt = b_length(y, L)
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
@@ -102,7 +107,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
     for i in range(params._maxLoops):
         # Debug metrics:
         if params._v:
-            l = length(y, L)
+            l = b_length(y, L)
             seg = np.argmax(y, axis=1)
             area = seg.sum()
             print("Iteration {:4d}: length = {:5.2f}, area = {:5d}".format(i, l, area))
@@ -122,7 +127,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
         z[:, 0] = 1 - z[:, 1]
 
         # Update c
-        rr = length(z, L)
+        rr = c_length(z, L)
         β = .5 * λ * tt * rr
 
         qq = np.sum(z[:, 1]) - ν2
@@ -154,18 +159,20 @@ def admm(params, y_0, N, L, unary_0, u, W, eg):
                 a = f
                 a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
 
+                exp = np.exp(-a /B)
                 y2 = y * np.exp(-a/Β)
                 y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
                 assert(np.allclose(y2.sum(1), 1))
                 assert(0 <= y2.min() and y2.max() <= 1)
 
-                if np.allclose(y2, y):
+                if np.allclose(y2, y, atol=1e-4):
+                    y = y2
                     break
 
                 y = y2
             print("Crf completed in {:3d} iterations".format(j))
 
-        tt = length(y, L)
+        tt = b_length(y, L)
 
         # Update Lagrangian multipliers
         ν1 = ν1 + (y - z)
