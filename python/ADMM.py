@@ -24,7 +24,7 @@ class Params(object):
         self._solvePCG = True
         self._GC = True
         self._maxLoops = 1000
-        self._crf_loops = 1000
+        self._crf_loops = 10
 
     @property
     def _kernelSize(self):
@@ -103,7 +103,8 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
-    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0)
+    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + 250
+    print("β for CRF: {:5.2f}".format(B))
 
     cost_1_prev = 0
     for i in range(params._maxLoops):
@@ -165,18 +166,18 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
             y[:, 0] = 1 - y[:, 1]
         else:
             for j in range(params._crf_loops):
-                a = f
-                a = a + denom * Φ.dot(y.ravel()).reshape(y.shape)
+                a = f + denom * Φ.dot(y.ravel()).reshape(y.shape)
 
                 exp = np.exp(-a / B)
                 # exp = np.exp(-a /(B + 1))
-                y2 = y * exp
+                y2 = y**(1) * exp
+                # y2 = y**(0.999) * exp
                 # y2 = y**(B/(B+1)) * exp
                 y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
                 assert(np.allclose(y2.sum(1), 1))
                 assert(0 <= y2.min() and y2.max() <= 1)
 
-                if np.allclose(y2, y, atol=1e-4):
+                if np.allclose(y2, y, atol=1e-1):
                     y = y2
                     break
 

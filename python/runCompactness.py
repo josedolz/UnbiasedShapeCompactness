@@ -97,9 +97,9 @@ if __name__ == "__main__":
 
     params._GC = False
     # if not params._GC:
-    params._lambda /= 100
-    params._mu1 /= 100
-    # params._mu2 /= 100
+    params._lambda /= 50
+    params._mu1 /= 200
+    params._mu2 /= 1000
     # params._lambda = 200
     # params._mu1 = 50
 
