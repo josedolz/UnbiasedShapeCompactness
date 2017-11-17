@@ -24,7 +24,11 @@ class Params(object):
         self._solvePCG = True
         self._GC = True
         self._maxLoops = 1000
+
         self._crf_loops = 10
+        self._crf_tol = 1e-1
+        self._delta_B = 250
+        self._e = .1
 
     @property
     def _kernelSize(self):
@@ -70,7 +74,6 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
     y, metrics = admm(params, priors, N, L, unary_0, u, W, eg, img)
-    # y, res = admm(params, y_0, N, L, unary_0, u, W, eg, img)
 
     final_seg = y.reshape(img.shape)
 
@@ -86,24 +89,25 @@ def b_length(label, L):
     return seg.T.dot(L.dot(seg))
 
 
+def binarize(y, e):
+    y[y <  .5] = e
+    y[y >= .5] = 1 - e
+    return y
+
+
 def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     if params._GC:
         y = y_0 >= .5
     else:
-        y = y_0
-        e = 0.1
-        y[y_0 <  .5] = e
-        y[y_0 >= .5] = 1 - e
+        y = binarize(y_0, params._e)
 
-    μ1 = params._mu1
-    μ2 = params._mu2
-    λ = params._lambda
+    λ, μ1, μ2 = params._lambda, params._mu1, params._mu2
 
     y = np.asarray([1-y, y]).T
-    plt.hist(y[:, 1])
-    plt.show()
+    # plt.hist(y[:, 1])
+    # plt.show()
     unary = unary_0.copy()
-    z = np.zeros(y.shape)
+    z = np.zeros((N, 2))
 
     s = np.sum(y[:, 1])
     ν1, ν2 = np.zeros((N, 2)), 0
@@ -111,7 +115,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
-    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + 250
+    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + params._delta_B
     print("β for CRF: {:5.2f}".format(B))
 
     metrics = {'length': [], 'area': [], 'compactness':[], "crf": []}
@@ -123,83 +127,23 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
             plt.imshow(seg.reshape(img.shape))
             plt.show()
 
-        # Debug metrics:
-        l = b_length(y, L)
-        seg = np.argmax(y, axis=1)
-        area = seg.sum()
-        compactness = l**2 / area
-        metrics["length"].append(l)
-        metrics["area"].append(area)
-        metrics["compactness"].append(compactness)
-        if params._v and False:
-            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}"
-                    .format(i, l, area, compactness))
+        metrics = update_metrics(params, y, L, metrics, i)
 
-        # Update z
-        α = (λ / s) * tt
-
-        a = (α*L + μ1 * sp.sparse.identity(N))
-        b = (μ1 * (y[:, 1] + ν1[:, 1]) + μ2 * (s + ν2))
-        if params._solvePCG:
-            tmp = sp.sparse.linalg.cg(a, b)[0]
-        else:
-            tmp = sp.sparse.linalg.spsolve(a, b)
-
-        const = (1 / μ1) * (1 / μ2 + N / μ1) ** -1
-        z[:, 1] = tmp - const * np.sum(tmp) * np.ones(N)
-        z[:, 0] = 1 - z[:, 1]
-
-        # Update c
+        z = update_z(params, λ, μ1, μ2, N, L, y, ν1, ν2, s, tt)
         rr = c_length(z, L)
-        β = .5 * λ * tt * rr
 
-        qq = np.sum(z[:, 1]) - ν2
-
-        eq = [1, -qq, 0, -β/μ2]
-        R = np.roots(eq)
-        R = R[np.isreal(R)]
-
-        if len(R) == 0:
-            print("No roots found...")
-            params._lambda /= 10
-            return admm(y_0, N, L, unary_0, u, eg)
-
-        s = np.real(np.max(R))
+        s = update_s(params, λ, μ2, ν2, tt, rr, z)
 
         # Update y
-        γ = .5 * (λ / s) * rr
         q = z - ν1
         f = u + μ1 * (.5 - q)
+        γ = .5 * (λ / s) * rr
         # denom = (γ + params._lambda0)
         denom = γ
         if params._GC:
-            unary[:, 1] = f[:, 1].T / denom
-            eg.set_unary(unary)
-            _ = eg.minimize()
-            y[:, 1] = eg.get_labeling()
-            y[:, 0] = 1 - y[:, 1]
+            y = gc_update(params, unary, f, denom, eg)
         else:
-            for j in range(params._crf_loops):
-                a = f + denom * Φ.dot(y.ravel()).reshape(y.shape)
-
-                exp = np.exp(-a / B)
-                # exp = np.exp(-a /(B + 1))
-                y2 = y**(1) * exp
-                # y2 = y**(0.999) * exp
-                # y2 = y**(B/(B+1)) * exp
-                y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
-                assert(np.allclose(y2.sum(1), 1))
-                assert(0 <= y2.min() and y2.max() <= 1)
-
-                if np.allclose(y2, y, atol=1e-1):
-                    y = y2
-                    break
-
-                y = y2
-            metrics["crf"].append(j)
-            if params._v and False:
-                print("Crf completed in {:3d} iterations".format(j))
-
+            y, metrics = crf_update(params, f, denom, Φ, B, y, metrics)
         tt = b_length(y, L)
 
         # Update Lagrangian multipliers
@@ -216,6 +160,95 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         cost_1_prev = cost_1
 
     return np.argmax(y, axis=1), metrics
+
+
+def update_metrics(params, y, L, metrics, i):
+    l = b_length(y, L)
+    seg = np.argmax(y, axis=1)
+    area = seg.sum()
+    compactness = l**2 / area
+
+    metrics["length"].append(l)
+    metrics["area"].append(area)
+    metrics["compactness"].append(compactness)
+
+    if params._v and True:
+        print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}"
+                .format(i, l, area, compactness))
+
+    return metrics
+
+
+def update_z(params, λ, μ1, μ2, N, L, y, ν1, ν2, s, tt):
+    α = (λ / s) * tt
+
+    a = α*L + μ1 * sp.sparse.identity(N)
+    b = μ1 * (y[:, 1] + ν1[:, 1]) + μ2 * (s + ν2)
+    if params._solvePCG:
+        tmp = sp.sparse.linalg.cg(a, b)[0]
+    else:
+        tmp = sp.sparse.linalg.spsolve(a, b)
+
+    const = (1 / μ1) * (1 / μ2 + N / μ1) ** -1
+    z = np.zeros((N, 2))
+    z[:, 1] = tmp - const * np.sum(tmp) * np.ones(N)
+    z[:, 0] = 1 - z[:, 1]
+
+    return z
+
+
+def update_s(params, λ, μ2, ν2, tt, rr, z):
+    β = .5 * λ * tt * rr
+
+    qq = np.sum(z[:, 1]) - ν2
+
+    eq = [1, -qq, 0, -β/μ2]
+    R = np.roots(eq)
+    R = R[np.isreal(R)]
+
+    if len(R) == 0:
+        raise ValueError("No roots found. Try decreasing λ")
+
+    s = np.real(np.max(R))
+
+    return s
+
+
+def gc_update(params, unary, f, denom, eg):
+    unary[:, 1] = f[:, 1].T / denom
+    eg.set_unary(unary)
+    _ = eg.minimize()
+
+    y = np.zeros(unary.shape)
+    y[:, 1] = eg.get_labeling()
+    y[:, 0] = 1 - y[:, 1]
+
+    return y
+
+
+def crf_update(params, f, denom, Φ, B, y, metrics):
+    for j in range(params._crf_loops):
+        a = f + denom * Φ.dot(y.ravel()).reshape(y.shape)
+
+        exp = np.exp(-a / B)
+        # exp = np.exp(-a /(B + 1))
+        y2 = y * exp
+        # y2 = y**(0.999) * exp
+        # y2 = y**(B/(B+1)) * exp
+        y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
+        assert(np.allclose(y2.sum(1), 1))
+        assert(0 <= y2.min() and y2.max() <= 1)
+
+        if np.allclose(y2, y, atol=params._crf_tol):
+            y = y2
+            break
+
+        y = y2
+    metrics["crf"].append(j)
+    if params._v and False:
+        print("Crf completed in {:3d} iterations".format(j))
+
+    return y, metrics
 
 
 def graph_cut(params, W, unary_0, kernel, N):
