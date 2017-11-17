@@ -88,12 +88,20 @@ def b_length(label, L):
 
 def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     if params._GC:
-        y_0 = y_0 >= .5
+        y = y_0 >= .5
+    else:
+        y = y_0
+        e = 0.1
+        y[y_0 <  .5] = e
+        y[y_0 >= .5] = 1 - e
+
     μ1 = params._mu1
     μ2 = params._mu2
     λ = params._lambda
 
-    y = np.asarray([1-y_0, y_0]).T
+    y = np.asarray([1-y, y]).T
+    plt.hist(y[:, 1])
+    plt.show()
     unary = unary_0.copy()
     z = np.zeros(y.shape)
 
@@ -123,7 +131,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         metrics["length"].append(l)
         metrics["area"].append(area)
         metrics["compactness"].append(compactness)
-        if params._v:
+        if params._v and False:
             print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}"
                     .format(i, l, area, compactness))
 
@@ -189,7 +197,8 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
                 y = y2
             metrics["crf"].append(j)
-            print("Crf completed in {:3d} iterations".format(j))
+            if params._v and False:
+                print("Crf completed in {:3d} iterations".format(j))
 
         tt = b_length(y, L)
 
