@@ -72,18 +72,22 @@ def eval_results(seg, ground):
     return dice_index, precision, recall
 
 
-def draw_results(img, grd_truth, segCNN, segGCs, segADMM):
-    fig, axes = plt.subplots(nrows=1, ncols=4)
+def draw_results(img, grd_truth, segCNN, segGCs, segADMM, metrics):
+    fig, axes = plt.subplots(nrows=2, ncols=4)
 
     figs = [(grd_truth, "Ground Truth"),
             (segCNN, "seg (CNN)"),
             (segGCs, "Seg (Gcs)"),
             (segADMM, "Seg (ADMM)")]
 
-    for axe, fig in zip(axes.flat, figs):
+    for axe, fig in zip(axes[0,:], figs):
         axe.imshow(img, cmap="Greys")
         axe.set_title(fig[1])
         axe.contour(fig[0])
+
+    for axe, metric in zip(axes[1, :], sorted(metrics.keys())):
+        axe.plot(metrics[metric])
+        axe.set_title(metric)
 
     plt.show()
 
@@ -106,7 +110,7 @@ if __name__ == "__main__":
     segCNN = probMap >= 0.5
 
     print("Starting compactness segmentation...")
-    segADMM, segGCs, _ = compactness_seg_prob_map(img, probMap, params)
+    segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)
 
     diceADMM, precisionADMM, recallADMM = eval_results(segADMM, grd_truth)
     diceGCs, precisionGCs, recallGCs = eval_results(segGCs, grd_truth)
@@ -116,4 +120,4 @@ if __name__ == "__main__":
     print(diceGCs, precisionGCs, recallGCs)
     print(diceCNN, precisionCNN, recallCNN)
 
-    draw_results(img, grd_truth, segCNN, segGCs, segADMM)
+    draw_results(img, grd_truth, segCNN, segGCs, segADMM, metrics)

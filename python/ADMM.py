@@ -69,12 +69,12 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u = np.zeros((N, 2))
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
-    y, res = admm(params, priors, N, L, unary_0, u, W, eg, img)
+    y, metrics = admm(params, priors, N, L, unary_0, u, W, eg, img)
     # y, res = admm(params, y_0, N, L, unary_0, u, W, eg, img)
 
     final_seg = y.reshape(img.shape)
 
-    return final_seg, seg_gc, res
+    return final_seg, seg_gc, metrics
 
 
 # Careful with the order, since L is sparse. np.dot is unaware of that fact.
@@ -106,6 +106,8 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + 250
     print("β for CRF: {:5.2f}".format(B))
 
+    metrics = {'length': [], 'area': [], 'compactness':[], "crf": []}
+
     cost_1_prev = 0
     for i in range(params._maxLoops):
         if params._v and i < 10 and False:
@@ -114,12 +116,16 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
             plt.show()
 
         # Debug metrics:
+        l = b_length(y, L)
+        seg = np.argmax(y, axis=1)
+        area = seg.sum()
+        compactness = l**2 / area
+        metrics["length"].append(l)
+        metrics["area"].append(area)
+        metrics["compactness"].append(compactness)
         if params._v:
-            l = b_length(y, L)
-            seg = np.argmax(y, axis=1)
-            area = seg.sum()
-            compactness = l**2 / area
-            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}".format(i, l, area, compactness))
+            print("Iteration {:4d}: length = {:5.2f}, area = {:5d}, compactness = {:5.2f}"
+                    .format(i, l, area, compactness))
 
         # Update z
         α = (λ / s) * tt
@@ -182,6 +188,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
                     break
 
                 y = y2
+            metrics["crf"].append(j)
             print("Crf completed in {:3d} iterations".format(j))
 
         tt = b_length(y, L)
@@ -199,7 +206,7 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
             break
         cost_1_prev = cost_1
 
-    return np.argmax(y, axis=1), 0
+    return np.argmax(y, axis=1), metrics
 
 
 def graph_cut(params, W, unary_0, kernel, N):
