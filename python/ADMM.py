@@ -166,10 +166,12 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         else:
             for j in range(params._crf_loops):
                 a = f
-                a = a + 2 * denom * Φ.dot(y.ravel()).reshape(y.shape)
+                a = a + denom * Φ.dot(y.ravel()).reshape(y.shape)
 
-                exp = np.exp(-a /B)
+                exp = np.exp(-a / B)
+                # exp = np.exp(-a /(B + 1))
                 y2 = y * exp
+                # y2 = y**(B/(B+1)) * exp
                 y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
                 assert(np.allclose(y2.sum(1), 1))
                 assert(0 <= y2.min() and y2.max() <= 1)
