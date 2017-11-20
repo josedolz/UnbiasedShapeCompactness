@@ -34,17 +34,17 @@ class Params(object):
         self._kernel[(n//2,)*2] = 0
 
 
-params = Params()
-
-
-def compactness_seg_prob_map(img, prob_map):
+def compactness_seg_prob_map(img, prob_map, params=None):
     """
     Wrapper function performing the graph cut and the ADMM
     :param img: The gray-scale image to segment
     :param prob_map: the probabilities for segmentation
-    :param P: Dictionary containing all the parameters.
+    :param params: The Params object
     :return: admm_segmentation, graph_cut segmentation, res code
     """
+    if params is None:
+        params = Params()
+
     small_eps = 1e-6
 
     N = img.size
@@ -58,20 +58,20 @@ def compactness_seg_prob_map(img, prob_map):
     u_0[:, 0] = -np.log(small_eps + (1 - priors))
     u_0[:, 1] = -np.log(small_eps + priors)
 
-    y_0, E, eg = graph_cut(W, u_0, params._kernel, N)
+    y_0, E, eg = graph_cut(params, W, u_0, params._kernel, N)
     seg_0 = y_0.reshape(img.shape)
 
     # ADMM
     p = np.log(small_eps + priors)
-    # y, res = admm(y_0, N, L, u_0, p, eg)
-    y, res = admm(priors >= .5, N, L, u_0, p, eg)
+    # y, res = admm(params, y_0, N, L, u_0, p, eg)
+    y, res = admm(params, priors >= .5, N, L, u_0, p, eg)
 
     seg = y.reshape(img.shape)
 
     return seg, seg_0, res
 
 
-def admm(y_0, N, L, u_0, p, eg):
+def admm(params, y_0, N, L, u_0, p, eg):
     _mu1 = params._mu1
     _mu2 = params._mu2
     _lambda = params._lambda
@@ -147,7 +147,7 @@ def admm(y_0, N, L, u_0, p, eg):
     return y, 0
 
 
-def graph_cut(W, u_0, kernel, N):
+def graph_cut(params, W, u_0, kernel, N):
     """
     Perform the graph cut for the initial segmentation.
     The current implementation is not fully functional, but the results for RIGHTVENT_MRI

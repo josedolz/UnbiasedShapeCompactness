@@ -6,7 +6,7 @@ import scipy.io
 import matplotlib.pyplot as plt
 from sys import argv
 
-from ADMM import compactness_seg_prob_map, params
+from ADMM import compactness_seg_prob_map, Params
 
 
 def wrap_load(name, path):
@@ -14,6 +14,7 @@ def wrap_load(name, path):
 
 
 def load_and_config(choice):
+    params = Params()
     params._v = True
 
     print(choice)
@@ -56,7 +57,7 @@ def load_and_config(choice):
     else:
         raise NameError("{} is not a valid choice".format(choice))
 
-    return img, grd_truth, probMap
+    return img, grd_truth, probMap, params
 
 
 def eval_results(seg, ground):
@@ -92,12 +93,12 @@ if __name__ == "__main__":
     if len(argv) > 1:
         choice = argv[1]
 
-    img, grd_truth, probMap = load_and_config(choice)
+    img, grd_truth, probMap, params = load_and_config(choice)
 
     segCNN = probMap >= 0.5
 
     print("Starting compactness segmentation...")
-    segADMM, segGCs, _ = compactness_seg_prob_map(img, probMap)
+    segADMM, segGCs, _ = compactness_seg_prob_map(img, probMap, params)
 
     diceADMM, precisionADMM, recallADMM = eval_results(segADMM, grd_truth)
     diceGCs, precisionGCs, recallGCs = eval_results(segGCs, grd_truth)
