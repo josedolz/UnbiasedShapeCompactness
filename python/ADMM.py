@@ -139,14 +139,14 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
         # Update y
         q = z - ν1
-        f = u + μ1 * (.5 - q)
+        F = u + μ1 * (.5 - q)
         γ = .5 * (λ / s) * rr
-        # denom = (γ + params._lambda0)
-        denom = γ
+        # Λ = (γ + params._lambda0)
+        Λ = γ
         if params._GC:
-            y1 = gc_update(params, unary, f, denom, eg)
+            y1 = gc_update(params, unary, F, Λ, eg)
         else:
-            y1, metrics = crf_update(params, f, denom, Φ, B, y, metrics)
+            y1, metrics = crf_update(params, F, Λ, Φ, B, y, metrics)
 
         # Converged ?
         if np.allclose(y, y1, atol=1e-3):
@@ -217,8 +217,8 @@ def update_s(params, λ, μ2, ν2, tt, rr, z):
     return s
 
 
-def gc_update(params, unary, f, denom, eg):
-    unary[:, 1] = f[:, 1].T / denom
+def gc_update(params, unary, F, Λ, eg):
+    unary[:, 1] = F[:, 1].T / Λ
     eg.set_unary(unary)
     _ = eg.minimize()
 
@@ -229,11 +229,11 @@ def gc_update(params, unary, f, denom, eg):
     return y
 
 
-def crf_update(params, f, denom, Φ, B, y, metrics):
+def crf_update(params, F, Λ, Φ, B, y, metrics):
     for j in range(params._crf_loops):
-        a = f + denom * Φ.dot(y.ravel()).reshape(y.shape)
+        a = F + Λ * Φ.dot(y.ravel()).reshape(y.shape)
 
-        exp = np.exp(-a / B)
+        exp = np.exp(-a/B)
         y2 = y * exp
         y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
         assert(np.allclose(y2.sum(1), 1))
