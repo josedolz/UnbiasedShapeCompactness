@@ -124,7 +124,6 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
     metrics = {'length': [], 'area': [], 'compactness':[], "crf": []}
 
-    cost_1_prev = 0
     for i in range(params._maxLoops):
         if params._v and i < 10 and False:
             seg = np.argmax(y, axis=1)
@@ -145,23 +144,23 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         # denom = (γ + params._lambda0)
         denom = γ
         if params._GC:
-            y = gc_update(params, unary, f, denom, eg)
+            y1 = gc_update(params, unary, f, denom, eg)
         else:
-            y, metrics = crf_update(params, f, denom, Φ, B, y, metrics)
-        tt = b_length(y, L)
+            y1, metrics = crf_update(params, f, denom, Φ, B, y, metrics)
 
+        # Converged ?
+        if np.allclose(y, y1, atol=1e-3):
+            if params._v:
+                print(i)
+            break
+        y = y1
+
+        tt = b_length(y, L)
         # Update Lagrangian multipliers
         ν1 = ν1 + (y - z)
         ν2 = ν2 + (s - np.sum(z[:, 1]))
         μ1 *= params._mu1Fact
         μ2 *= params._mu2Fact
-
-        cost_1 = u[:, 1].T.dot(y[:, 1])
-        if cost_1_prev == cost_1:
-            if params._v:
-                print(i)
-            break
-        cost_1_prev = cost_1
 
     return np.argmax(y, axis=1), metrics
 
@@ -235,10 +234,7 @@ def crf_update(params, f, denom, Φ, B, y, metrics):
         a = f + denom * Φ.dot(y.ravel()).reshape(y.shape)
 
         exp = np.exp(-a / B)
-        # exp = np.exp(-a /(B + 1))
         y2 = y * exp
-        # y2 = y**(0.999) * exp
-        # y2 = y**(B/(B+1)) * exp
         y2 = y2 / np.repeat(y2.sum(1), 2).reshape(y2.shape)
         assert(np.allclose(y2.sum(1), 1))
         assert(0 <= y2.min() and y2.max() <= 1)
