@@ -22,13 +22,15 @@ class Params(object):
         self._mu1Fact = 1.01
         self._mu2Fact = 1.01
         self._solvePCG = True
-        self._GC = True
+        self._GC = False
         self._maxLoops = 1000
 
         self._crf_loops = 10
         self._crf_tol = 1e-1
         self._delta_B = 250
         self._e = .1
+        self._init_graph_cut = False
+        self._binarize_update = False
 
     @property
     def _kernelSize(self):
@@ -73,7 +75,10 @@ def compactness_seg_prob_map(img, prob_map, params=None):
     u = np.zeros((N, 2))
     u[:, 0] = np.log(ε + 1 - prob_map.ravel())
     u[:, 1] = np.log(ε + prob_map.ravel())
-    y, metrics = admm(params, priors, N, L, unary_0, u, W, eg, img)
+    if params._init_graph_cut:
+        y, metrics = admm(params, y_0, N, L, unary_0, u, W, eg, img)
+    else:
+        y, metrics = admm(params, priors, N, L, unary_0, u, W, eg, img)
 
     final_seg = y.reshape(img.shape)
 
@@ -90,9 +95,10 @@ def b_length(label, L):
 
 
 def binarize(y, e):
-    y[y <  .5] = e
-    y[y >= .5] = 1 - e
-    return y
+    r = np.zeros(y.shape)
+    r[y <  .5] = e
+    r[y >= .5] = 1 - e
+    return r
 
 
 def admm(params, y_0, N, L, unary_0, u, W, eg, img):
@@ -104,8 +110,6 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     λ, μ1, μ2 = params._lambda, params._mu1, params._mu2
 
     y = np.asarray([1-y, y]).T
-    # plt.hist(y[:, 1])
-    # plt.show()
     unary = unary_0.copy()
     z = np.zeros((N, 2))
 
@@ -247,6 +251,9 @@ def crf_update(params, f, denom, Φ, B, y, metrics):
     metrics["crf"].append(j)
     if params._v and False:
         print("Crf completed in {:3d} iterations".format(j))
+
+    if params._binarize_update:
+        y = binarize(y, params._e)
 
     return y, metrics
 

@@ -99,7 +99,6 @@ if __name__ == "__main__":
 
     img, grd_truth, probMap, params = load_and_config(choice)
 
-    params._GC = False
     if not params._GC:
         params._lambda /= 50
         params._mu1 /= 200
