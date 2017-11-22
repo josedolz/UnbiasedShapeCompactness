@@ -21,7 +21,6 @@ class Params(object):
         self._mu2 = 50
         self._mu1Fact = 1.01
         self._mu2Fact = 1.01
-        self._solvePCG = True
         self._GC = False
         self._maxLoops = 1000
 
@@ -148,9 +147,12 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
             y1 = gc_update(params, unary, F, Λ, eg)
         else:
             y1, metrics = crf_update(params, F, Λ, Φ, B, y, metrics)
+        diff = np.abs(y - y1)
+        print("\tDiff: {:5.6f}".format(diff.mean()))
 
         # Converged ?
-        if np.allclose(y, y1, atol=1e-3):
+        # if np.allclose(y, y1, atol=1e-3):
+        if diff.mean() <= 1e-4:
             if params._v:
                 print(i)
             break
@@ -188,10 +190,7 @@ def update_z(params, λ, μ1, μ2, N, L, y, ν1, ν2, s, tt):
 
     a = α*L + μ1 * sp.sparse.identity(N)
     b = μ1 * (y[1, :] + ν1[1, :]) + μ2 * (s + ν2)
-    if params._solvePCG:
-        tmp = sp.sparse.linalg.cg(a, b)[0]
-    else:
-        tmp = sp.sparse.linalg.spsolve(a, b)
+    tmp = sp.sparse.linalg.cg(a, b)[0]
 
     const = (1 / μ1) * (1 / μ2 + N / μ1) ** -1
     z = np.zeros((2, N))
@@ -220,7 +219,7 @@ def update_s(params, λ, μ2, ν2, tt, rr, z):
 
 def gc_update(params, unary, F, Λ, eg):
     unary[1, :] = F[1, :] / Λ
-    eg.set_unary(unary)
+    eg.set_unary(unary.T)
     _ = eg.minimize()
 
     y = np.zeros(unary.shape)
