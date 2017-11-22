@@ -5,6 +5,7 @@ import scipy as sp
 import scipy.io
 import matplotlib.pyplot as plt
 from sys import argv
+import cProfile
 
 from ADMM import compactness_seg_prob_map, Params
 
@@ -107,7 +108,9 @@ if __name__ == "__main__":
     segCNN = probMap >= 0.5
 
     print("Starting compactness segmentation...")
-    segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)
+    # segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)
+    cProfile.run('segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)',
+                    sort='cumtime')
 
     diceADMM, precisionADMM, recallADMM = eval_results(segADMM, grd_truth)
     diceGCs, precisionGCs, recallGCs = eval_results(segGCs, grd_truth)

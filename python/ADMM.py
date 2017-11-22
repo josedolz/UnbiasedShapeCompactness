@@ -119,7 +119,8 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
 
     δ = np.ones((2, 2)) - np.diag((1,) * 2)
     Φ = sp.sparse.kron(W, δ)
-    B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + params._delta_B
+    # B = np.max(sp.sparse.linalg.eigsh(Φ)[0], 0) + params._delta_B
+    B = params._delta_B  # Save quite a lot of time
     print("β for CRF: {:5.2f}".format(B))
 
     metrics = {'length': [], 'area': [], 'compactness':[], "crf": []}
