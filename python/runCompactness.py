@@ -74,7 +74,7 @@ def eval_results(seg, ground):
 
 
 def draw_results(img, grd_truth, segCNN, segGCs, segADMM, metrics):
-    fig, axes = plt.subplots(nrows=2, ncols=4)
+    fig, axes = plt.subplots(nrows=3, ncols=4)
 
     figs = [(grd_truth, "Ground Truth"),
             (segCNN, "seg (CNN)"),
@@ -82,11 +82,17 @@ def draw_results(img, grd_truth, segCNN, segGCs, segADMM, metrics):
             (segADMM, "Seg (ADMM)")]
 
     for axe, fig in zip(axes[0,:], figs):
-        axe.imshow(img, cmap="Greys")
+        axe.imshow(img, cmap="gray")
         axe.set_title(fig[1])
         axe.contour(fig[0])
 
-    for axe, metric in zip(axes[1, :], sorted(metrics.keys())):
+    diffs_keys = [k for k in metrics.keys() if 'diff' not in k]
+    other_keys = [k for k in metrics.keys() if k not in diffs_keys]
+
+    for axe, metric in zip(axes[1, :], sorted(other_keys)):
+        axe.plot(metrics[metric])
+        axe.set_title(metric)
+    for axe, metric in zip(axes[2, :], sorted(diffs_keys)):
         axe.plot(metrics[metric])
         axe.set_title(metric)
 
@@ -101,16 +107,16 @@ if __name__ == "__main__":
     img, grd_truth, probMap, params = load_and_config(choice)
 
     if not params._GC:
-        params._lambda /= 50
-        params._mu1 /= 200
-        params._mu2 /= 1000
+        params._lambda = 400
+        params._mu1 = 25
+        params._mu2 = .05
 
     segCNN = probMap >= 0.5
 
     print("Starting compactness segmentation...")
-    # segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)
-    cProfile.run('segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)',
-                    sort='cumtime')
+    segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)
+    # cProfile.run('segADMM, segGCs, metrics = compactness_seg_prob_map(img, probMap, params)',
+                    # sort='cumtime')
 
     diceADMM, precisionADMM, recallADMM = eval_results(segADMM, grd_truth)
     diceGCs, precisionGCs, recallGCs = eval_results(segGCs, grd_truth)

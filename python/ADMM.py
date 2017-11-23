@@ -24,7 +24,7 @@ class Params(object):
         self._GC = False
         self._maxLoops = 1000
 
-        self._crf_loops = 10
+        self._crf_loops = 1000
         self._crf_tol = 1e-1
         self._delta_B = 250
         self._e = .1
@@ -122,8 +122,10 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
     B = params._delta_B  # Save quite a lot of time
     print("β for CRF: {:5.2f}".format(B))
 
-    metrics = {'length': [], 'area': [], 'compactness':[], "crf": []}
+    metrics = {'length': [], 'area': [], 'compactness':[], 'crf': [],
+                'diff min': [], 'diff max': [], 'diff avg': [], 'diff std': []}
 
+    not_much = 0
     for i in range(params._maxLoops):
         if params._v and i < 10 and False:
             seg = np.argmax(y, axis=1)
@@ -148,11 +150,17 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         else:
             y1, metrics = crf_update(params, F, Λ, Φ, B, y, metrics)
         diff = np.abs(y - y1)
+        if diff.mean() < 0.01:
+            not_much += 1
         print("\tDiff: {:5.6f}".format(diff.mean()))
+        metrics['diff min'].append(diff.min())
+        metrics['diff max'].append(diff.max())
+        metrics['diff avg'].append(diff.mean())
+        metrics['diff std'].append(diff.std())
 
         # Converged ?
-        # if np.allclose(y, y1, atol=1e-3):
-        if diff.mean() <= 1e-4:
+        if np.allclose(y, y1, atol=1e-3):
+        # if diff.mean() <= 1e-4:
             if params._v:
                 print(i)
             break
@@ -164,6 +172,9 @@ def admm(params, y_0, N, L, unary_0, u, W, eg, img):
         ν2 = ν2 + (s - np.sum(z[1, :]))
         μ1 *= params._mu1Fact
         μ2 *= params._mu2Fact
+
+    if not params._GC:
+        print("Iterations without much diff: {}".format(not_much))
 
     return np.argmax(y, axis=0), metrics
 
